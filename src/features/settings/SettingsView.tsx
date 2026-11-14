@@ -1,3 +1,5 @@
+import { hosted } from "@/auth/publik";
+import { UsageChoice } from "@/features/auth/UsageChoice";
 import { useEffect, useState } from "react";
 import { Badge, Button, Field, Spinner } from "@/ui/primitives";
 import { Avatar } from "@/ui/Avatar";
@@ -187,7 +189,7 @@ export function SettingsView({
             <Avatar name={displayName || email || "User"} size={36} />
             <div className="stack settings-account">
               {displayName && <span className="settings-account__name">{displayName}</span>}
-              <span className="small muted">{email || "Not signed in"}</span>
+              <span className="small muted">{hosted ? "Signed in with Publik on this installation" : email || "Local developer edition"}</span>
               {/* One organization row: a switcher when the user owns more than one
                   workspace, otherwise static text (so the active org is not shown
                   twice). Organizations are an account concept, so hide the row
@@ -214,10 +216,7 @@ export function SettingsView({
 
       {isCommunity() && <CourtListenerCard />}
 
-      {/* Anonymous usage: shown only when the ping is actually active (the hosted
-          BYOK build). Since BYOK users have no account, an anonymous once-a-day
-          install ping is the only way to count unique users; it is fully
-          disclosed and opt-out here. No documents, keys, or prompts are sent. */}
+      {hosted && <div className="card settings-card"><UsageChoice /></div>}
 
       {!isCommunity() && (
         <div className="card settings-card">

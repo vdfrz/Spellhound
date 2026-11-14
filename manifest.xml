@@ -11,14 +11,13 @@
   <ProviderName>Spellhound</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Spellhound for Word" />
-  <Description DefaultValue="Contract review, playbooks, drafting, and US legal research inside Word. Grounded redlines applied as native tracked changes." />
+  <Description DefaultValue="Pilot Word add-in for reviewing and drafting contracts with tracked changes." />
   <IconUrl DefaultValue="https://spellhound.example/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://spellhound.example/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://github.com/vdfrz/Spellhound/issues" />
 
   <AppDomains>
     <AppDomain>https://spellhound.example</AppDomain>
-    <AppDomain>https://publikhq.com</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -116,7 +115,7 @@
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Open the Spellhound pane to review this contract, apply grounded redlines, and draft clauses." />
-        <bt:String id="Spellhound.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and run drafting and research." />
+        <bt:String id="Spellhound.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and draft clauses." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

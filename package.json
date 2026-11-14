@@ -18,12 +18,11 @@
     "lint": "eslint .",
     "sideload": "office-addin-debugging start manifest.dev.xml desktop",
     "sideload:stop": "office-addin-debugging stop manifest.dev.xml",
-    "validate:manifest": "office-addin-manifest validate manifest.xml",
+    "validate:manifest": "office-addin-manifest validate dist/manifest.xml",
     "manifest": "node scripts/manifest.mjs",
     "start": "node server/start.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
     "mammoth": "^1.12.0",
     "office-word-diff": "github:yuch85/office-word-diff",
     "react": "^18.3.1",

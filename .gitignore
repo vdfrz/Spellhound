@@ -37,3 +37,5 @@ provider.key
 *.crt
 *.pem
 .spellhound/
+
+publik-app-token.txt

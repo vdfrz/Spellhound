@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 /**
  * Persist which tours a user has completed, so the first-run walkthrough shows
  * once and the per-surface guides are opt-in afterward. Local to the add-in
@@ -10,7 +11,7 @@ let cache: Set<string> | null = null;
 function load(): Set<string> {
   if (cache) return cache;
   try {
-    const raw = localStorage.getItem(SEEN_KEY);
+    const raw = localStorage.getItem(storageName(SEEN_KEY));
     const arr = raw ? (JSON.parse(raw) as unknown) : [];
     cache = new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
   } catch {
@@ -28,7 +29,7 @@ export function markTourSeen(id: string): void {
   if (set.has(id)) return;
   set.add(id);
   try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify([...set]));
+    localStorage.setItem(storageName(SEEN_KEY), JSON.stringify([...set]));
   } catch {
     // localStorage unavailable - keep it in memory for this session.
   }
@@ -38,7 +39,7 @@ export function markTourSeen(id: string): void {
 export function resetToursSeen(): void {
   cache = new Set();
   try {
-    localStorage.removeItem(SEEN_KEY);
+    localStorage.removeItem(storageName(SEEN_KEY));
   } catch {
     // ignore
   }

@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 import type { AssistantMessage } from "./useAssistant";
 
 /**
@@ -35,7 +36,7 @@ function capMessages(list: Conversation[]): Conversation[] {
 
 function read(): Conversation[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(storageName(KEY));
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as Conversation[]) : [];
@@ -46,7 +47,7 @@ function read(): Conversation[] {
 
 function write(list: Conversation[]): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(capMessages(list)));
+    localStorage.setItem(storageName(KEY), JSON.stringify(capMessages(list)));
   } catch {
     // localStorage unavailable (private mode / policy): history just won't persist.
   }

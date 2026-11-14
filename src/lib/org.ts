@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 /**
  * Active-organization store for the add-in.
  *
@@ -21,7 +22,7 @@ const listeners = new Set<Listener>();
 /** Read the persisted selection once at startup. */
 export function initActiveOrg(): void {
   try {
-    activeOrgId = localStorage.getItem(STORAGE_KEY);
+    activeOrgId = localStorage.getItem(storageName(STORAGE_KEY));
   } catch {
     activeOrgId = null;
   }
@@ -35,8 +36,8 @@ export function setActiveOrgId(id: string | null): void {
   if (id === activeOrgId) return;
   activeOrgId = id;
   try {
-    if (id) localStorage.setItem(STORAGE_KEY, id);
-    else localStorage.removeItem(STORAGE_KEY);
+    if (id) localStorage.setItem(storageName(STORAGE_KEY), id);
+    else localStorage.removeItem(storageName(STORAGE_KEY));
   } catch {
     // localStorage unavailable (private mode / policy) -- keep it in memory.
   }

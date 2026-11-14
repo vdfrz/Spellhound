@@ -1,3 +1,4 @@
+import { hosted, storageName } from "@/auth/publik";
 import type { ProviderId } from "./providers/types";
 
 export type { ProviderId };
@@ -91,7 +92,7 @@ function partition(): string {
 }
 
 function keyName(suffix: string): string {
-  return `${partition()}${PREFIX}.${suffix}`;
+  return storageName(`${partition()}${PREFIX}.${suffix}`);
 }
 
 /**
@@ -133,7 +134,7 @@ function write(suffix: string, value: string | null): boolean {
 
 export function getActiveProvider(): ProviderId {
   const saved = read("provider");
-  return saved && (KNOWN_PROVIDERS as string[]).includes(saved) ? (saved as ProviderId) : "publik";
+  return saved && (KNOWN_PROVIDERS as string[]).includes(saved) ? (saved as ProviderId) : hosted ? "publik" : "openai";
 }
 
 export function setActiveProvider(p: ProviderId): void {
@@ -156,6 +157,7 @@ export function removeKey(p: ProviderId): void {
 
 /** Clear every provider's key and custom base URL (sign-out / leave BYOK). */
 export function clearAllProviderKeys(): void {
+  write(CL_TOKEN, null);
   for (const p of KNOWN_PROVIDERS) {
     write(`${p}.key`, null);
     write(`${p}.baseUrl`, null);

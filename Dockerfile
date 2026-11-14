@@ -11,6 +11,8 @@ WORKDIR /app
 RUN mkdir -p /data/spellhound && chown node:node /data/spellhound
 COPY --from=build /app/dist ./dist
 COPY server/*.mjs ./server/
+COPY scripts/manifest.mjs ./scripts/
+COPY manifest.xml LICENSE NOTICE ./
 USER node
 EXPOSE 8080
 CMD ["node","server/start.mjs"]
