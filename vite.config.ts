@@ -30,18 +30,21 @@ function devHttps() {
   return undefined;
 }
 
-// The add-in ships three HTML entry points served from the same origin:
+// The add-in ships two Office HTML entry points served from the same origin:
 //   index.html      the task pane SPA
-//   auth.html       the Supabase PKCE redirect page opened inside the Office dialog
 //   dictation.html  the microphone dialog (the pane iframe cannot get the mic)
 // Office requires HTTPS in production; local dev uses the office-addin dev certs.
-export default defineConfig({
+export default defineConfig(({mode}) => ({
   plugins: [react(), {
     name: "local-public-research",
     configureServer(server) {
       const handle = researchRoute({ origin: (server.config.server.https ? "https" : "http") + "://localhost:" + server.config.server.port });
       server.middlewares.use("/spellhound/research", (req, res, next) => { handle(req, res).catch(next); });
     },
+  }, {
+    name: "spellhound-edition",
+    generateBundle() { this.emitFile({type:"asset", fileName:"edition.json",
+      source:JSON.stringify({edition:mode === "community" ? "developer" : "publik"})}); }
   }],
   define: {
     __APP_VERSION__: JSON.stringify(pkgVersion),
@@ -67,11 +70,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         taskpane: resolve(__dirname, "index.html"),
-        auth: resolve(__dirname, "auth.html"),
         dictation: resolve(__dirname, "dictation.html"),
         // preview.html is a local UI harness served by `npm run dev`; it is
         // intentionally excluded from the production build.
       },
     },
   },
-});
+}));

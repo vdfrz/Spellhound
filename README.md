@@ -8,9 +8,9 @@ Use Node 22. Run `npm ci`, then `npm test` and `npm run build`. The production p
 
 ## Hosted service
 
-Provide `SPELLHOUND_ORIGIN` (the HTTPS origin that serves the pane), `PUBLIK_APP_TOKEN` for the Spellhound listing, and a private persistent volume at `/data/spellhound`. Terminate HTTPS at the ingress and route the pane and API to the same origin. The example Dockerfile serves both. Generate the release manifest with `npm run manifest -- https://your-real-host.example` after building. It writes `dist/manifest.xml`. The included root manifest uses a reserved example host until then.
+Publik-only sign-in is implemented for a single Word installation. After browser claim, users explicitly choose a Publik balance or their own provider. Documents and keys are not shared between installations. The server enforces a 30-day session limit and checks the wallet on paid requests. Optional content-free usage counts are off initially.
 
-The server provisions a separate Publik installation credential for each browser session, verifies its wallet before AI calls, and stores the key server-side. A claimed install grants AI access only. A durable cross-device identity contract and a Publik deployment target are still required for shared private workspaces. No real app token or hosting URL is included.
+The intended public deployment uses the dedicated Google Cloud project and Publik sign-in. Billing attachment, a live HTTPS address and a real sign-in test in Word are pending. A Publik listing links to the deployed service. Each Word installation currently has its own session. See the [private pilot guide](DEPLOY.md) for platform evidence, token handling, the Word manifest and the Iris-assisted installation checklist.
 
 ## Release status
 

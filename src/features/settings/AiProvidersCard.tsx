@@ -1,3 +1,5 @@
+import { hosted, paymentSettings } from "@/auth/publik";
+import { Button } from "@/ui/primitives";
 import { ProviderKeyForm } from "@/features/onboarding/ProviderKeyForm";
 
 /**
@@ -9,9 +11,9 @@ export function AiProvidersCard() {
     <div className="card settings-card">
       <h2 className="settings-heading">AI provider</h2>
       <p className="small muted settings-heading__hint">
-        Spellhound uses your own AI key in this edition. Switch providers or update your key here.
+        {hosted ? "Use your Publik balance or configure your own provider." : "Configure your AI provider on this device."}
       </p>
-      <ProviderKeyForm />
+      {hosted ? <Button onClick={paymentSettings}>Change AI payment or key</Button> : <ProviderKeyForm ownOnly />}
     </div>
   );
 }
