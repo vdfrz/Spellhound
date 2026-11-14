@@ -25,12 +25,25 @@ describe("Draft generation through the queue and preview path", () => {
     expect(runJson).toHaveBeenCalledTimes(2);
     expect(vi.mocked(runJson).mock.calls[1][1]).toContain("emailed within five days");
     expect(result).toMatchObject({ scope: "passage", fullText: paragraph, sections: [{ title: "", content: paragraph }] });
-    const insertHtml = vi.fn(() => ({ select: vi.fn() }));
-    const document = { getSelection: () => ({ insertHtml }) };
-    vi.stubGlobal("Word", { run: (fn: Function) => fn({ document, sync: vi.fn() }), InsertLocation: { after: "After" } });
+    const select = vi.fn();
+    const range = { expandTo: vi.fn(() => ({ select })), select };
+    const inserted = { getRange: vi.fn(() => range), styleBuiltIn: "", font: {} };
+    const anchor = {
+      insertParagraph: vi.fn(() => inserted),
+      parentTableOrNullObject: { load: vi.fn(), isNullObject: true },
+    };
+    const document = { getSelection: () => ({ paragraphs: { load: vi.fn(), items: [anchor] } }) };
+    vi.stubGlobal("Word", {
+      run: (fn: Function) => fn({ document, sync: vi.fn() }),
+      InsertLocation: { after: "After" },
+      RangeLocation: { content: "Content" },
+      BuiltInStyleName: { normal: "Normal" },
+    });
     try {
       await insertDraftFormatted(result);
-      expect(insertHtml).toHaveBeenCalledWith(`<p>${paragraph}</p>`, "After");
+      expect(anchor.insertParagraph).toHaveBeenCalledExactlyOnceWith(paragraph, "After");
+      expect(inserted.styleBuiltIn).toBe("Normal");
+      expect(select).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
     }
