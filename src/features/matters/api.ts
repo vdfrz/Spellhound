@@ -9,7 +9,7 @@ async function request<T>(path: string, body?: object): Promise<T> {
     ...(body && { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }) });
   if (!r.ok) {
     const error = await r.json().catch(() => null);
-    throw new Error(error?.error ?? 'The private matter workspace is unavailable.');
+    throw new Error(error?.error ?? 'Your deal folders are unavailable.');
   }
   return r.json();
 }

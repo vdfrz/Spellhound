@@ -54,7 +54,7 @@ export function activeContextCount(config: ContextConfig, hasMatter: boolean): n
  * sheet above the composer with a click-away backdrop and Escape-to-close.
  */
 export function ContextMenu({
-  privateMattersAvailable,
+  onSave,
   config,
   onChange,
   hasMatter,
@@ -65,7 +65,7 @@ export function ContextMenu({
   atCap,
   onClose,
 }: {
-  privateMattersAvailable: boolean;
+  onSave?: () => void;
   config: ContextConfig;
   onChange: (config: ContextConfig) => void;
   hasMatter: boolean;
@@ -113,7 +113,8 @@ export function ContextMenu({
           )} /> : <Suspense fallback={<p>Opening research…</p>}><ResearchView initialSource={picker === "law" ? "uscode" : "parallel"}
             onAttach={item => attachText(item.citation, [item.title, item.citation, item.url, item.passage, "Treatment unknown"].join("\n"))} /></Suspense>}
         </div> : <>
-          {privateMattersAvailable && <button className="ctx-source" disabled={atCap} onClick={() => setPicker("matter")}><FolderIcon size={16} />Attach a matter item</button>}
+          {onSave && <button className="ctx-source" disabled={atCap} onClick={() => setPicker("matter")}><FolderIcon size={16} />Use from a deal folder</button>}
+          {onSave && <button className="ctx-source" onClick={() => { onClose(); onSave(); }}><FolderIcon size={16} />Save to a deal folder</button>}
           <button className="ctx-source" disabled={atCap} onClick={() => setPicker("law")}><ScaleIcon size={16} />Look up US law</button>
           <button className="ctx-source" disabled={atCap} onClick={() => setPicker("web")}><GlobeIcon size={16} />Search the web with Parallel</button>
         </>)}

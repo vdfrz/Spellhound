@@ -4,7 +4,7 @@ import './matters.css';
 
 const failure = (e: unknown) => e instanceof Error ? e.message : 'Please try again.';
 
-export function MatterWorkspace({ target }: { target: string }) {
+export function MatterWorkspace({ target, initialText = '' }: { target: string; initialText?: string }) {
   const [list, setList] = useState<Matter[]>([]);
   const [selected, select] = useState('');
   const [name, setName] = useState('');
@@ -16,28 +16,29 @@ export function MatterWorkspace({ target }: { target: string }) {
       .catch(e => { if (active) setError(failure(e)); }).finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
   }, []);
-  return <section className="matter-workspace" aria-label="Matter workspace">
-    <h1>Matters</h1><p>Word editing target: <strong>{target}</strong>. Filed references are read-only.</p>
-    <label>Open matter<select value={selected} onChange={e => select(e.target.value)}>
-      <option value="">Choose a matter</option>{list.map(m => <option value={m.id} key={m.id}>{m.name}</option>)}
+  return <section className="matter-workspace" aria-label="Save to a deal folder">
+    <h1>Save to a deal folder</h1><p>Keep notes, decisions and reference text for one deal together.</p><p>Open in Word: <strong>{target}</strong></p>
+    <label>Deal folder<select value={selected} onChange={e => select(e.target.value)}>
+      <option value="">Choose a deal folder</option>{list.map(m => <option value={m.id} key={m.id}>{m.name}</option>)}
     </select></label>
     <form onSubmit={async e => {
       e.preventDefault(); setBusy(true); setError('');
       try { const m = await matters.create(name); setList(xs => [m, ...xs]); select(m.id); setName(''); }
       catch (e) { setError(failure(e)); } finally { setBusy(false); }
-    }}><label>New matter name<input value={name} maxLength={120} onChange={e => setName(e.target.value)} /></label>
-      <button disabled={busy || !name.trim()}>Create matter</button></form>
+    }}><label>New folder name<input value={name} maxLength={120} onChange={e => setName(e.target.value)} /></label>
+      <button disabled={busy || !name.trim()}>Create folder</button></form>
     {error && <p role="alert">{error}</p>}
-    {selected && <Folder key={selected} matter={list.find(m => m.id === selected)!} />}
+    {selected && <Folder key={selected} initialText={initialText} matter={list.find(m => m.id === selected)!} />}
   </section>;
 }
 
-function Folder({ matter }: { matter: Matter }) {
+function Folder({ matter, initialText }: { matter: Matter; initialText: string }) {
   const [rows, setRows] = useState<Entry[]>([]);
   const [memory, setMemory] = useState<Experience[] | null>(null);
   const [kind, setKind] = useState<Kind>('note');
   const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [saved, setSaved] = useState('');
+  const [body, setBody] = useState(initialText);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -55,9 +56,9 @@ function Folder({ matter }: { matter: Matter }) {
   return <section><h2>{matter.name}</h2>
     <form onSubmit={e => { e.preventDefault(); void run(async () => {
       const row = await matters.file(matter.id, kind, title, body);
-      setRows(xs => [row, ...xs]); setTitle(''); setBody('');
-    }); }}><fieldset disabled={busy}><legend>File an item</legend>
-      <label>Item type<select value={kind} onChange={e => { setKind(e.target.value as Kind); setTitle(''); setBody(''); }}>
+      setRows(xs => [row, ...xs]); setSaved(row.title); setTitle(''); setBody('');
+    }); }}><fieldset disabled={busy}><legend>Save an item</legend>
+      <label>Item type<select value={kind} onChange={e => { setKind(e.target.value as Kind); }}>
         <option value="note">Note</option><option value="decision">Decision</option><option value="reference">Reference</option>
       </select></label>
       {kind === 'reference' && <label>Import reference text (.txt, .md, .docx)<input type="file" accept=".txt,.md,.docx" onChange={e => {
@@ -73,11 +74,12 @@ function Folder({ matter }: { matter: Matter }) {
       }} /></label>}
       <label>Title<input value={title} maxLength={240} onChange={e => setTitle(e.target.value)} /></label>
       <label>{kind === 'reference' ? 'Reference text' : 'Details'}<textarea rows={4} value={body} maxLength={kind === 'reference' ? 120000 : 12000} onChange={e => setBody(e.target.value)} /></label>
-      <button disabled={!title.trim() || !body.trim()}>File {kind}</button>
+      <button disabled={!title.trim() || !body.trim() || body.length > (kind === 'reference' ? 120000 : 12000)}>Save {kind}</button>
     </fieldset></form>
     {error && <p role="alert">{error}</p>}
-    <h3>Filed items</h3>
-    {!rows.length && !busy && !error && <p>No items filed yet.</p>}
+    {saved && <p role="status">Saved “{saved}” to {matter.name}.</p>}
+    <h3>Saved items</h3>
+    {!rows.length && !busy && !error && <p>No saved items yet.</p>}
     {rows.map(row => <details key={row.id}><summary><small>{row.kind}</small> {row.title}</summary><p className="matter-body">{row.body}</p>
       {row.kind === 'decision' && <button disabled={busy} onClick={() => recall(row.id)}>Summarize this decision in memory</button>}
     </details>)}

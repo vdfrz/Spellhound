@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { IconButton, SegmentedControl, Spinner } from "@/ui/primitives";
+import { IconButton, Spinner } from "@/ui/primitives";
 import { AutoTextarea } from "@/ui/AutoTextarea";
 import { useVoiceInput } from "@/lib/useVoiceInput";
 import { StopIcon, WandIcon } from "@/ui/icons";
@@ -59,16 +59,14 @@ function ArrowUpGlyph() {
 export type ComposerMode = "ask" | "edit";
 
 interface ComposerProps {
-  privateMattersAvailable?: boolean;
+  onSave?: () => void;
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
   onStop?: () => void;
   disabled: boolean;
-  /** Ask (chat) vs Edit (describe a change, get redlines). Tabs live in the
-   *  composer so switching never leaves the input. */
+  /** Ask (chat) vs Edit (describe a change, get redlines). Used for the prompt and send action. */
   mode: ComposerMode;
-  onMode: (mode: ComposerMode) => void;
   scope: Scope;
   onScope: (scope: Scope) => void;
   context: ContextConfig;
@@ -94,12 +92,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     onStop,
     disabled,
     mode,
-    onMode,
     scope,
     onScope,
     context,
     onContextChange,
-    privateMattersAvailable = false,
+    onSave,
     hasMatter,
     attachments,
     onAttach,
@@ -168,7 +165,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       )}
       {contextOpen && (
         <ContextMenu
-          privateMattersAvailable={privateMattersAvailable}
+          onSave={onSave}
           config={context}
           onChange={onContextChange}
           hasMatter={hasMatter}
@@ -233,18 +230,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           >
             <WandIcon size={14} /> Prompts
           </button>
-          {/* Ask / Edit sits third, after Add-context and Prompts. */}
-          <span data-tour="composer-modes" style={{ display: "inline-flex" }}>
-            <SegmentedControl<ComposerMode>
-              label="Assistant mode"
-              options={[
-                { value: "ask", label: "Ask" },
-                { value: "edit", label: "Edit" },
-              ]}
-              value={mode}
-              onChange={onMode}
-            />
-          </span>
           {improve.canImprove && !disabled && (
             <button
               type="button"

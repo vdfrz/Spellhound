@@ -10,7 +10,6 @@ import { config } from "@/config";
 import { FileTypeIcon } from "@/ui/fileIcons";
 import { Avatar } from "@/ui/Avatar";
 import { getUser } from "@/auth/session";
-import { SaveAnswerToNotes } from "@/features/integration/SaveAnswerToNotes";
 
 /** Signed-in user's name + photo for the avatar (Google OAuth picture when
  *  present; the Avatar falls back to initials if there is no photo). */
@@ -46,7 +45,7 @@ function InsertGlyph() {
  * buttons (not hidden behind a kebab) so the two things a user most wants to do
  * with an answer are one click away.
  */
-function AssistantActions({ message }: { message: AssistantMessage }) {
+function AssistantActions({ message, onSave }: { message: AssistantMessage; onSave?: (text: string) => void }) {
   const [note, setNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -99,9 +98,7 @@ function AssistantActions({ message }: { message: AssistantMessage }) {
         <InsertGlyph />
         Insert
       </button>
-      {/* Cross-link: keep research done in Word from being lost to the local
-          session by saving the answer as a note on a Spellhound client. */}
-      <SaveAnswerToNotes content={message.content} />
+      {onSave && <button type="button" className="msg__action-btn" onClick={() => onSave(message.content)}>Save…</button>}
       {note && <span className="small muted msg__actions-note">{note}</span>}
     </div>
   );
@@ -241,9 +238,11 @@ function UserActions({
 
 export function MessageBubble({
   message,
+  onSave,
   onEdit,
 }: {
   message: AssistantMessage;
+  onSave?: (text: string) => void;
   /** Enables Copy/Edit on a user message (edit-and-re-run). */
   onEdit?: (message: AssistantMessage) => void;
 }) {
@@ -329,7 +328,7 @@ export function MessageBubble({
           anchorId={anchorId}
         />
       )}
-      {message.content && !message.pending && <AssistantActions message={message} />}
+      {message.content && !message.pending && <AssistantActions message={message} onSave={onSave} />}
     </div>
   );
 }

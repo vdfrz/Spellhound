@@ -12,16 +12,18 @@ export function AssistantTab({ intent, onIntentDone, privateMattersAvailable = f
   onIntentDone?: () => void;
   privateMattersAvailable?: boolean;
 } = {}) {
-  const [showMatters, setShowMatters] = useState(false);
-  const assistant = <AssistantView privateMattersAvailable={privateMattersAvailable} intent={intent} onIntentDone={onIntentDone} />;
-  if (!privateMattersAvailable) return assistant;
+  const [saveText, setSaveText] = useState<string | null>(null);
+  const saving = privateMattersAvailable && saveText !== null;
   return <div className="assistant-tab">
-    <div className="assistant-tab__toggle"><button className="btn btn--sm" onClick={() => setShowMatters(x => !x)}>
-      {showMatters ? 'Back to assistant' : 'Open matter workspace'}
-    </button></div>
-    <div className="assistant-tab__body" hidden={showMatters}>{assistant}</div>
-    {showMatters && <div className="assistant-tab__body assistant-tab__body--pad">
-      <Suspense fallback={<p>Opening workspace…</p>}><Workspace target={targetName()} /></Suspense>
+    <div className="assistant-tab__body" hidden={saving}>
+      <AssistantView onSave={privateMattersAvailable ? setSaveText : undefined}
+        intent={intent} onIntentDone={onIntentDone} />
+    </div>
+    {saving && <div className="assistant-tab__body assistant-tab__body--pad">
+      <button type="button" className="btn btn--sm" onClick={() => setSaveText(null)}>Back to assistant</button>
+      <Suspense fallback={<p>Opening deal folders…</p>}>
+        <Workspace target={targetName()} initialText={saveText} />
+      </Suspense>
     </div>}
   </div>;
 }
