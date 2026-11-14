@@ -12,7 +12,7 @@ import type { RedlineSuggestion } from "@/api/types";
  *
  * Attribution constraint: Office.js cannot set the author of a tracked change,
  * so in-pane edits are attributed to the signed-in Word user. For edits stamped
- * "Vaquill AI Contract Review" regardless of the user, use the server export
+ * "Spellhound Contract Review" regardless of the user, use the server export
  * path (exportCorrectedDocx) instead.
  */
 

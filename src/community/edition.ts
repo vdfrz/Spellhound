@@ -10,7 +10,7 @@
  *    with no account.
  *
  * When community (either way), api/http and api/sse route every call through the
- * local shim in src/community instead of the Vaquill AI backend.
+ * local shim in src/community instead of the Spellhound backend.
  */
 const BYOK_FLAG = "vaquill.byokMode";
 
@@ -33,7 +33,7 @@ function byokFlag(): boolean {
 
 /** True only for the open-source community build (which has no hosted login). */
 export function isBuildCommunity(): boolean {
-  return import.meta.env.VITE_EDITION === "community";
+  return true; // Both Spellhound builds run document tools through the local router.
 }
 
 /** True when the community (BYOK) experience should run: the community build, or

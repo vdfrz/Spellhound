@@ -1,3 +1,4 @@
+import { references, targetName } from "./documentContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   streamAssistant,
@@ -30,29 +31,6 @@ export interface ContextAttachment {
  *  the extracted text is not persisted into the transcript. */
 export interface MessageAttachment {
   name: string;
-}
-
-// When files are attached they share the request budget with the open document,
-// so a huge attachment can't starve the doc (or vice versa). The doc keeps the
-// larger share since the assistant is primarily answering about it.
-const ATTACHMENT_BUDGET = 20_000;
-const DOC_BUDGET_WITH_ATTACHMENTS = 30_000;
-
-/** Fold attached-file text into the document context as clearly delimited blocks.
- *  Files carried as raw bytes for the provider (PDFs, no text) are skipped here;
- *  they are sent as provider attachments instead. */
-function mergeContext(docContext: string, attachments: ContextAttachment[]): string {
-  const textual = attachments.filter((a) => a.text);
-  if (textual.length === 0) return docContext;
-  let remaining = ATTACHMENT_BUDGET;
-  const blocks: string[] = [];
-  for (const a of textual) {
-    if (remaining <= 0) break;
-    const body = a.text.slice(0, remaining);
-    remaining -= body.length;
-    blocks.push(`\n\n===== Attached file: ${a.name} =====\n${body}`);
-  }
-  return docContext.slice(0, DOC_BUDGET_WITH_ATTACHMENTS) + blocks.join("");
 }
 
 /** The PDFs among the attachments, shaped as provider file attachments. Empty in
@@ -172,7 +150,10 @@ export function useAssistant() {
       // ref so this reflects the latest committed transcript (e.g. right after a
       // truncation during regenerate), not a stale render closure.
       const history: ChatMessage[] = [
-        ...messagesRef.current.map((m) => ({ role: m.role, content: m.content })),
+        ...messagesRef.current.filter(m => !m.pending).map((m) => ({
+          role: m.role,
+          content: m.attachments?.length ? m.content + "\nReference files on this turn: " + m.attachments.map(a => a.name).join(", ") : m.content,
+        })),
         { role: "user", content: trimmed },
       ];
 
@@ -209,7 +190,10 @@ export function useAssistant() {
           setState((s) => ({ ...s, streaming: false, thinking: null }));
           return;
         }
-        const context = mergeContext(baseContext, atts);
+        const context = JSON.stringify({
+          activeDocument: { name: targetName(), scope, text: baseContext.slice(0, atts.length ? 230000 : 270000) },
+          references: references(atts),
+        });
         // PDFs ride the request as provider file attachments (community edition);
         // the hosted path receives none (its PDFs are already text). Merge them
         // into the grounding options passed to the stream.
@@ -253,13 +237,15 @@ export function useAssistant() {
           },
           streamOpts,
         );
+        if (controller.signal.aborted) return;
         patchAssistant((m) => ({ ...m, pending: false }));
         setState((s) => ({ ...s, streaming: false, thinking: null }));
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
         // Answer already complete: keep it, just stop the streaming state.
         if (finalized) {
-          patchAssistant((m) => ({ ...m, pending: false }));
+          if (controller.signal.aborted) return;
+        patchAssistant((m) => ({ ...m, pending: false }));
           setState((s) => ({ ...s, streaming: false, thinking: null }));
           return;
         }

@@ -228,7 +228,7 @@ export async function streamClauseFix(
 /**
  * Request the authoritative tracked-changes .docx for the accepted redlines.
  * The endpoint returns raw .docx bytes, base64-encoded here for Office.js
- * insertFileFromBase64. Authorship is stamped "Vaquill AI Contract Review"
+ * insertFileFromBase64. Authorship is stamped "Spellhound Contract Review"
  * server-side, which the in-pane apply path cannot do (Office.js cannot set a
  * tracked-change author).
  */

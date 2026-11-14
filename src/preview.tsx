@@ -230,7 +230,7 @@ function AuthorityPreview() {
           <div className="row" style={{ justifyContent: "space-between" }}>
             <div className="row" style={{ gap: 6, alignItems: "center" }}>
               <h1 style={{ fontSize: 15 }}>Authority check</h1>
-              <InfoTip side="left" text="Checks every case citation in the document against Vaquill AI's US case-law corpus. Verified means a real matching case was found. No match can mean a hallucinated, mis-typed, or unreported citation, so confirm it yourself before you rely on it or file." />
+              <InfoTip side="left" text="Checks every case citation in the document against Spellhound's US case-law corpus. Verified means a real matching case was found. No match can mean a hallucinated, mis-typed, or unreported citation, so confirm it yourself before you rely on it or file." />
             </div>
             <Button variant="ghost" size="sm">New check</Button>
           </div>

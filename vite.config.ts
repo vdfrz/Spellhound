@@ -45,7 +45,7 @@ export default defineConfig({
   test: {
     environment: "node",
     // This is a live provider probe, not a unit test. Never collect it.
-    exclude: [...configDefaults.exclude, "src/ai/test.ts"],
+    exclude: [...configDefaults.exclude, "src/ai/test.ts", "server/**"],
   },
   server: {
     port: 3000,

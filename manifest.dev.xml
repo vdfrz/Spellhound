@@ -6,20 +6,19 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <!-- DEV manifest. Sideload this one. Points at the local Vite dev server. -->
-  <Id>b1c2d3e4-0000-4dev-9e62-3c5d1a8b6f04</Id>
+  <Id>3ee21860-b29c-564f-b963-8b6934697d2d</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Vaquill AI</ProviderName>
+  <ProviderName>Spellhound</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Vaquill AI for Word (Dev)" />
-  <Description DefaultValue="Local development build of the Vaquill AI Word add-in." />
+  <DisplayName DefaultValue="Spellhound for Word (Dev)" />
+  <Description DefaultValue="Local development build of the Spellhound Word add-in." />
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://www.vaquill.ai/support" />
+  <SupportUrl DefaultValue="https://github.com/vdfrz/Spellhound/issues" />
 
   <AppDomains>
     <AppDomain>https://localhost:3000</AppDomain>
-    <AppDomain>https://api.vaquill.ai</AppDomain>
+    <AppDomain>https://publikhq.com</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -44,18 +43,18 @@
         <DesktopFormFactor>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="Vaquill.Group">
-                <Label resid="Vaquill.Group.Label" />
+              <Group id="Spellhound.Group">
+                <Label resid="Spellhound.Group.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16" />
                   <bt:Image size="32" resid="Icon.32" />
                   <bt:Image size="80" resid="Icon.80" />
                 </Icon>
-                <Control xsi:type="Button" id="Vaquill.OpenPane">
-                  <Label resid="Vaquill.OpenPane.Label" />
+                <Control xsi:type="Button" id="Spellhound.OpenPane">
+                  <Label resid="Spellhound.OpenPane.Label" />
                   <Supertip>
-                    <Title resid="Vaquill.OpenPane.Label" />
-                    <Description resid="Vaquill.OpenPane.Tip" />
+                    <Title resid="Spellhound.OpenPane.Label" />
+                    <Description resid="Spellhound.OpenPane.Tip" />
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16" />
@@ -63,7 +62,7 @@
                     <bt:Image size="80" resid="Icon.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Vaquill.Taskpane</TaskpaneId>
+                    <TaskpaneId>Spellhound.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
@@ -83,11 +82,11 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Vaquill.Group.Label" DefaultValue="Vaquill AI" />
-        <bt:String id="Vaquill.OpenPane.Label" DefaultValue="Open Vaquill AI" />
+        <bt:String id="Spellhound.Group.Label" DefaultValue="Spellhound" />
+        <bt:String id="Spellhound.OpenPane.Label" DefaultValue="Open Spellhound" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Vaquill.OpenPane.Tip" DefaultValue="Open the Vaquill AI pane to review the open contract." />
+        <bt:String id="Spellhound.OpenPane.Tip" DefaultValue="Open the Spellhound pane to review the open contract." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

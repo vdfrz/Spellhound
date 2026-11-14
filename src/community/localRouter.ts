@@ -30,7 +30,7 @@ import { del, getAll, put } from "./store";
  *
  * Anything not implemented here throws a REQUIRES_ACCOUNT error, which the UI
  * already renders as a friendly message. That is the default gate: a feature that
- * needs Vaquill AI's hosted data or account says so instead of failing oddly.
+ * needs Spellhound's hosted data or account says so instead of failing oddly.
  */
 
 interface StoredPrompt {
@@ -93,7 +93,7 @@ function requiresAccount(): never {
   throw new ApiError(
     "unknown",
     0,
-    "This feature needs a Vaquill AI account and is not available in the community edition.",
+    "This feature needs a Spellhound account and is not available in the community edition.",
     "REQUIRES_ACCOUNT",
   );
 }
@@ -199,7 +199,7 @@ export interface CommunityEditResult {
  * Run the whole-document edit on the user's own model and ground the result.
  * Shared by the JSON route and the community stream shim so both gate identically.
  */
-export async function communityEditDocument(body: Record<string, unknown>): Promise<CommunityEditResult> {
+export async function communityEditDocument(body: Record<string, unknown>, signal?: AbortSignal): Promise<CommunityEditResult> {
   const documentText = str(body.documentText);
   const priorEdits = (Array.isArray(body.priorEdits) ? body.priorEdits : []).map((e) => {
     const o = bodyObj(e);
@@ -216,7 +216,7 @@ export async function communityEditDocument(body: Record<string, unknown>): Prom
     strArray(body.priorInstructions),
     priorEdits,
   );
-  const raw = (await runJson(p.system, p.user)) as Record<string, unknown>;
+  const raw = (await runJson(p.system, p.user, Array.isArray(body.attachments) ? body.attachments : undefined, signal)) as Record<string, unknown>;
   return groundEdits(documentText, raw);
 }
 
@@ -232,7 +232,7 @@ function groundEdits(documentText: string, raw: Record<string, unknown>): Commun
     .map((item) => bodyObj(item))
     .map((e) => {
       const currentLanguage = str(e.currentLanguage);
-      const isInsertion = str(e.grounding) === "insertion" || currentLanguage === "";
+      const isInsertion = currentLanguage === "" && str(e.grounding) === "insertion" && !!str(e.proposedLanguage).trim();
       const verbatim = currentLanguage !== "" && documentText.includes(currentLanguage);
       return { e, currentLanguage, isInsertion, verbatim };
     })

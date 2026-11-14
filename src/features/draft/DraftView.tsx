@@ -372,7 +372,7 @@ export function DraftView() {
           <a href={`${config.appBase}/drafting`} target="_blank" rel="noreferrer">
             open your saved drafts
           </a>{" "}
-          in Vaquill AI.
+          in Spellhound.
         </p>
       </div>
 

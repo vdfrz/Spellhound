@@ -31,3 +31,10 @@ npm-debug.log*
 DEPLOY.md
 README.md
 manifest.dev.xml
+
+node_modules
+provider.key
+*.key
+*.crt
+*.pem
+.spellhound/

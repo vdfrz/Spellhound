@@ -6,36 +6,25 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <!-- Production manifest. Served from https://word.vaquill.ai -->
-  <Id>f4a9c2e0-7b31-4d8a-9e62-3c5d1a8b6f04</Id>
+  <Id>fe00578c-c898-54cf-81d1-8be6881db124</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Vaquill AI</ProviderName>
+  <ProviderName>Spellhound</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Vaquill AI for Word" />
+  <DisplayName DefaultValue="Spellhound for Word" />
   <Description DefaultValue="Contract review, playbooks, drafting, and US legal research inside Word. Grounded redlines applied as native tracked changes." />
-  <IconUrl DefaultValue="https://word.vaquill.ai/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://word.vaquill.ai/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://www.vaquill.ai/support" />
+  <IconUrl DefaultValue="https://spellhound.example/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://spellhound.example/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://github.com/vdfrz/Spellhound/issues" />
 
-  <!-- Domains the task pane is allowed to navigate to. -->
   <AppDomains>
-    <AppDomain>https://word.vaquill.ai</AppDomain>
-    <AppDomain>https://api.vaquill.ai</AppDomain>
-    <!-- Supabase auth (custom domain) is the start URL of the sign-in dialog
-         opened via Office.context.ui.displayDialogAsync; the dialog then
-         redirects to the Google OAuth consent page. Both domains must be
-         listed here or Office refuses to open the dialog with "The domain of
-         the URL is not included in the AppDomains element". -->
-    <AppDomain>https://dbs.vaquill.ai</AppDomain>
-    <AppDomain>https://accounts.google.com</AppDomain>
+    <AppDomain>https://spellhound.example</AppDomain>
+    <AppDomain>https://publikhq.com</AppDomain>
   </AppDomains>
 
   <Hosts>
     <Host Name="Document" />
   </Hosts>
 
-  <!-- Hard floor: WordApi 1.6 gives change tracking, tracked-change
-       enumeration/accept-reject, comments, and custom XML parts, all GA. -->
   <Requirements>
     <Sets DefaultMinVersion="1.6">
       <Set Name="WordApi" MinVersion="1.6" />
@@ -43,7 +32,7 @@
   </Requirements>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://word.vaquill.ai/index.html" />
+    <SourceLocation DefaultValue="https://spellhound.example/index.html" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -59,18 +48,18 @@
           </GetStarted>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="Vaquill.Group">
-                <Label resid="Vaquill.Group.Label" />
+              <Group id="Spellhound.Group">
+                <Label resid="Spellhound.Group.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16" />
                   <bt:Image size="32" resid="Icon.32" />
                   <bt:Image size="80" resid="Icon.80" />
                 </Icon>
-                <Control xsi:type="Button" id="Vaquill.OpenPane">
-                  <Label resid="Vaquill.OpenPane.Label" />
+                <Control xsi:type="Button" id="Spellhound.OpenPane">
+                  <Label resid="Spellhound.OpenPane.Label" />
                   <Supertip>
-                    <Title resid="Vaquill.OpenPane.Label" />
-                    <Description resid="Vaquill.OpenPane.Tip" />
+                    <Title resid="Spellhound.OpenPane.Label" />
+                    <Description resid="Spellhound.OpenPane.Tip" />
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16" />
@@ -78,21 +67,21 @@
                     <bt:Image size="80" resid="Icon.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Vaquill.Taskpane</TaskpaneId>
+                    <TaskpaneId>Spellhound.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
-          <!-- Right-click a text selection to open Vaquill AI where the cursor is. -->
+
           <ExtensionPoint xsi:type="ContextMenu">
             <OfficeMenu id="ContextMenuText">
-              <Control xsi:type="Button" id="Vaquill.ContextReview">
-                <Label resid="Vaquill.Context.Label" />
+              <Control xsi:type="Button" id="Spellhound.ContextReview">
+                <Label resid="Spellhound.Context.Label" />
                 <Supertip>
-                  <Title resid="Vaquill.Context.Label" />
-                  <Description resid="Vaquill.OpenPane.Tip" />
+                  <Title resid="Spellhound.Context.Label" />
+                  <Description resid="Spellhound.OpenPane.Tip" />
                 </Supertip>
                 <Icon>
                   <bt:Image size="16" resid="Icon.16" />
@@ -100,7 +89,7 @@
                   <bt:Image size="80" resid="Icon.80" />
                 </Icon>
                 <Action xsi:type="ShowTaskpane">
-                  <TaskpaneId>Vaquill.Taskpane</TaskpaneId>
+                  <TaskpaneId>Spellhound.Taskpane</TaskpaneId>
                   <SourceLocation resid="Taskpane.Url" />
                 </Action>
               </Control>
@@ -111,23 +100,23 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://word.vaquill.ai/assets/icon-16.png" />
-        <bt:Image id="Icon.32" DefaultValue="https://word.vaquill.ai/assets/icon-32.png" />
-        <bt:Image id="Icon.80" DefaultValue="https://word.vaquill.ai/assets/icon-80.png" />
+        <bt:Image id="Icon.16" DefaultValue="https://spellhound.example/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://spellhound.example/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://spellhound.example/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://word.vaquill.ai/index.html" />
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://www.vaquill.ai/word" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://spellhound.example/index.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/vdfrz/Spellhound" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Vaquill AI for Word is ready" />
-        <bt:String id="Vaquill.Group.Label" DefaultValue="Vaquill AI" />
-        <bt:String id="Vaquill.OpenPane.Label" DefaultValue="Open Vaquill AI" />
-        <bt:String id="Vaquill.Context.Label" DefaultValue="Review with Vaquill AI" />
+        <bt:String id="GetStarted.Title" DefaultValue="Spellhound for Word is ready" />
+        <bt:String id="Spellhound.Group.Label" DefaultValue="Spellhound" />
+        <bt:String id="Spellhound.OpenPane.Label" DefaultValue="Open Spellhound" />
+        <bt:String id="Spellhound.Context.Label" DefaultValue="Review with Spellhound" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Open the Vaquill AI pane to review this contract, apply grounded redlines, and draft clauses." />
-        <bt:String id="Vaquill.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and run drafting and research." />
+        <bt:String id="GetStarted.Description" DefaultValue="Open the Spellhound pane to review this contract, apply grounded redlines, and draft clauses." />
+        <bt:String id="Spellhound.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and run drafting and research." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

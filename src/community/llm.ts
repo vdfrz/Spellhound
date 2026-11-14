@@ -1,3 +1,4 @@
+import type { ChatAttachment } from "@/ai/providers/types";
 import { getProvider } from "@/ai/providers/registry";
 
 /**
@@ -45,11 +46,11 @@ export function parseJson(text: string): unknown {
   return tryParseJson(text) ?? {};
 }
 
-async function chatText(system: string, user: string): Promise<string> {
+async function chatText(system: string, user: string, attachments?: ChatAttachment[], signal?: AbortSignal): Promise<string> {
   const { text } = await getProvider().chat({
     system,
     messages: [{ role: "user", content: user }],
-    json: true,
+    json: true, attachments, signal,
     maxTokens: 4096,
   });
   return text;
@@ -62,13 +63,13 @@ async function chatText(system: string, user: string): Promise<string> {
  * is cheap and recovers the common "model added a sentence around the JSON"
  * failure without a heavier per-feature schema layer.
  */
-export async function runJson(system: string, user: string): Promise<unknown> {
-  const first = tryParseJson(await chatText(system, user));
+export async function runJson(system: string, user: string, attachments?: ChatAttachment[], signal?: AbortSignal): Promise<unknown> {
+  const first = tryParseJson(await chatText(system, user, attachments, signal));
   if (first !== undefined) return first;
   const retry = tryParseJson(
     await chatText(
       system,
-      `${user}\n\nReturn ONLY a single valid JSON value. No prose, no markdown, no code fences.`,
+      `${user}\n\nReturn ONLY a single valid JSON value. No prose, no markdown, no code fences.`, attachments, signal,
     ),
   );
   return retry ?? {};

@@ -50,6 +50,7 @@ export interface EditResult {
 /** Follow-up context so the server refines the set instead of starting over:
  *  the earlier instructions this session + the edits currently on screen. */
 export interface EditPriorContext {
+  attachments?: import("@/ai/providers/types").ChatAttachment[];
   priorInstructions?: string[];
   priorEdits?: { label: string; currentLanguage: string; proposedLanguage: string }[];
 }
@@ -66,6 +67,7 @@ export async function editDocument(
   signal?: AbortSignal,
 ): Promise<EditResult> {
   const body: Record<string, unknown> = { documentText, instruction };
+  if (prior?.attachments?.length) body.attachments = prior.attachments;
   if (contractType) body.contractType = contractType;
   if (prior?.priorInstructions?.length) body.priorInstructions = prior.priorInstructions;
   if (prior?.priorEdits?.length) body.priorEdits = prior.priorEdits;
@@ -113,6 +115,7 @@ export async function streamEditDocument(
   handlers: EditStreamHandlers,
 ): Promise<void> {
   const body: Record<string, unknown> = { documentText, instruction };
+  if (prior?.attachments?.length) body.attachments = prior.attachments;
   if (contractType) body.contractType = contractType;
   if (prior?.priorInstructions?.length) body.priorInstructions = prior.priorInstructions;
   if (prior?.priorEdits?.length) body.priorEdits = prior.priorEdits;

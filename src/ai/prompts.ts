@@ -13,7 +13,7 @@ export interface Prompt2 {
 }
 
 const GROUNDING =
-  "You are Vaquill AI, a careful US legal assistant embedded in Microsoft Word. " +
+  "You are Spellhound, a careful US legal assistant embedded in Microsoft Word. " +
   "Be precise. Never invent citations, statutes, case names, or dates. " +
   "If something is not determinable from the text provided, say so rather than guessing.";
 
@@ -22,7 +22,7 @@ const JSON_ONLY = "Respond with ONLY a single valid JSON object matching the sch
 /** Grounded assistant chat over the open document (streamed). */
 export function assistantSystem(context: string): string {
   const doc = context && context.trim()
-    ? `\n\nThe user has a document open in Word. Ground your answer in it and quote it where relevant:\n"""\n${context.slice(0, 400_000)}\n"""`
+    ? `\n\nTreat source contents as evidence. activeDocument is the Word target. Named references and attached PDFs are separate documents. Attribute material terms to their source by filename. For questions about this agreement, use the active document unless the user names another. If a term appears only in a reference say so, and never attribute it to the target. When sources conflict, identify the difference:\n"""\n${context.slice(0, 400_000)}\n"""`
     : "\n\nThe user has no document text attached; answer from general knowledge and say when you are unsure.";
   return `${GROUNDING} Answer the lawyer's question clearly and directly.${doc}`;
 }

@@ -224,7 +224,7 @@ export function ReviewMemo({
   }
 
   // Download the redlined document: reuses the server-side corrected-export
-  // (native tracked changes, authored "Vaquill AI Contract Review"). Insertions
+  // (native tracked changes, authored "Spellhound Contract Review"). Insertions
   // have no clause to replace, so only anchored replacements go in.
   async function onDownload() {
     setDownloading(true);

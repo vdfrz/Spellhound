@@ -100,7 +100,7 @@ function AppShell() {
         if (!alive) return;
         if (me.initialized === false) {
           setAuthNotice(
-            "You do not have a Vaquill AI account yet. Create one on the web, then sign in here.",
+            "You do not have a Spellhound account yet. Create one on the web, then sign in here.",
           );
           clearSession(); // -> subscribe fires user=null -> back to the login screen
         } else {
@@ -153,18 +153,18 @@ function AppShell() {
       ) : (
         <header className="appbar">
           <a
-            href="https://www.vaquill.ai"
+            href="https://github.com/vdfrz/Spellhound"
             target="_blank"
             rel="noreferrer"
             className="appbar__brand"
-            title="Vaquill AI"
-            aria-label="Open the Vaquill AI website in your browser"
+            title="Spellhound"
+            aria-label="Open the Spellhound website in your browser"
           >
             <img
               src="/assets/icon-80.png"
               width={22}
               height={22}
-              alt="Vaquill AI"
+              alt="Spellhound"
               className="appbar__mark"
             />
           </a>
@@ -277,6 +277,11 @@ function AppShell() {
         role={authed ? "tabpanel" : undefined}
         aria-labelledby={authed ? `tab-${tab}` : undefined}
       >
+        {authed && (
+          <div hidden={tab !== "assistant" || showSettings} style={{height: "100%"}}>
+            <AssistantTab intent={tab === "assistant" && !showSettings ? intent : null} onIntentDone={clearIntent} />
+          </div>
+        )}
         {!authed ? (
           regState === "checking" ? (
             <div className="login">
@@ -334,12 +339,7 @@ function AppShell() {
           )
         ) : tab === "draft" ? (
           <DraftView />
-        ) : tab === "assistant" ? (
-          <AssistantTab
-            intent={tab === "assistant" ? intent : null}
-            onIntentDone={clearIntent}
-          />
-        ) : (
+        ) : tab === "assistant" ? null : (
           <ToolsHub intent={tab === "tools" ? intent : null} onIntentDone={clearIntent} />
         )}
       </div>

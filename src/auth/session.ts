@@ -127,6 +127,13 @@ export async function setSessionFromTokens(
 }
 
 export function clearSession(): void {
+  if (import.meta.env.MODE !== "community" && isCommunity()) {
+    void fetch("/spellhound/session/end", { method: "POST" }).then(r => {
+      if (r.ok || r.status === 401) { clearAllProviderKeys(); window.location.reload(); }
+      else window.alert("Sign-out failed. Retry while connected.");
+    }).catch(() => window.alert("Sign-out failed. Retry while connected."));
+    return;
+  }
   if (isCommunity()) {
     clearAllProviderKeys();
     // Leaving BYOK mode returns the hosted build to the sign-in screen; the

@@ -51,7 +51,7 @@ async function chatStream(body: unknown, opts: StreamHandlers): Promise<void> {
 async function editStream(body: unknown, opts: StreamHandlers): Promise<void> {
   opts.onEvent({ event: "meta", data: JSON.stringify({ sections: 0 }) });
   try {
-    const result = await communityEditDocument((body ?? {}) as Record<string, unknown>);
+    const result = await communityEditDocument((body ?? {}) as Record<string, unknown>, opts.signal);
     for (const edit of result.edits) {
       if (opts.signal?.aborted) return;
       opts.onEvent({ event: "edit", data: JSON.stringify({ edit }) });

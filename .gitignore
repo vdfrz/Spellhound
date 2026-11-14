@@ -30,3 +30,10 @@ pnpm-debug.log*
 
 # Internal design/research docs (not for the public repo)
 docs/
+
+node_modules
+provider.key
+*.key
+*.crt
+*.pem
+.spellhound/

@@ -39,8 +39,8 @@ export interface GovernanceLedger {
   playbookId?: string;
   matterId?: string;
   /**
-   * The saved Vaquill AI draft id, present only when the reviewed contract was
-   * saved to Vaquill AI (which yields a draft id). Its presence is what lets the
+   * The saved Spellhound draft id, present only when the reviewed contract was
+   * saved to Spellhound (which yields a draft id). Its presence is what lets the
    * sign-off run through the backend's authority-enforced approval instead of
    * the in-file attestation.
    */
@@ -66,7 +66,7 @@ export interface ReviewMeta {
   contractType?: string;
   playbookId?: string;
   matterId?: string;
-  /** Saved Vaquill AI draft id, when the contract was already saved. */
+  /** Saved Spellhound draft id, when the contract was already saved. */
   draftId?: string;
 }
 

@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { CheckIcon, FolderIcon, GlobeIcon, ScaleIcon, UploadIcon } from "@/ui/icons";
 import { attachAccept } from "@/api/context";
 import { isCommunity } from "@/community/edition";
-import { HOSTED_URL, LockIcon } from "@/ui/UpgradeGate";
+import { LockIcon } from "@/ui/UpgradeGate";
 import { AttachmentChips } from "./AttachmentChips";
 import { MAX_ATTACHMENTS, type AttachedFile } from "./useAttachments";
 import "./context-menu.css";
@@ -82,7 +82,7 @@ export function ContextMenu({
   }, [onClose]);
 
   // These three sources (US corpus, matter documents, web search) all run on the
-  // Vaquill AI backend/account. In the community/BYOK edition none of them apply,
+  // Spellhound backend/account. In the community/BYOK edition none of them apply,
   // so show them locked (rather than as live toggles that would silently do
   // nothing) and keep the attach-file section below, which works on-device.
   const community = isCommunity();
@@ -103,13 +103,11 @@ export function ContextMenu({
         {rows.map((s) => {
           if (community) {
             return (
-              <a
+              <div
                 key={s.key}
                 className="ctx-source ctx-source--locked"
-                href={HOSTED_URL}
-                target="_blank"
-                rel="noreferrer"
-                title="Available on the Vaquill AI hosted plan"
+                aria-disabled="true"
+                title="Requires the Spellhound workspace"
               >
                 <span className="ctx-source__icon" aria-hidden>
                   {s.icon}
@@ -118,7 +116,7 @@ export function ContextMenu({
                 <span className="ctx-source__check" aria-hidden>
                   <LockIcon size={13} />
                 </span>
-              </a>
+              </div>
             );
           }
           const on = config[s.key];
@@ -143,7 +141,7 @@ export function ContextMenu({
         })}
         {community ? (
           <p className="ctx-menu__note small muted">
-            Case law, matter documents, and web search are on the Vaquill AI hosted plan. Attach a
+            Case law, matter documents, and web search are available with a connected Spellhound workspace. Attach a
             file below to add your own context.
           </p>
         ) : (

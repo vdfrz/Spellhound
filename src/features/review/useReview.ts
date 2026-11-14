@@ -33,7 +33,7 @@ export interface RunParams {
   reviewInstructions?: string;
   /** Include footnotes and headers/footers in the whole-document read. */
   includeExtras?: boolean;
-  /** Scope this review to a Vaquill AI matter (carried through to saving). */
+  /** Scope this review to a Spellhound matter (carried through to saving). */
   matterId?: string;
   /** Markup aggressiveness (light / standard / firm). */
   markupLevel?: "light" | "standard" | "firm";
