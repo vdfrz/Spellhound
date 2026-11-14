@@ -106,7 +106,7 @@ function AppShell({ privateMattersAvailable }: { privateMattersAvailable: boolea
       ) : (
         <header className="appbar">
           <a
-            href="https://github.com/vdfrz/Spellhound"
+            href="https://github.com/vedantdas312-cell/Spellhound"
             target="_blank"
             rel="noreferrer"
             className="appbar__brand"

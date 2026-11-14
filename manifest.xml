@@ -14,7 +14,7 @@
   <Description DefaultValue="Pilot Word add-in for reviewing and drafting contracts with tracked changes." />
   <IconUrl DefaultValue="https://spellhound.example/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://spellhound.example/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://github.com/vdfrz/Spellhound/issues" />
+  <SupportUrl DefaultValue="https://github.com/vedantdas312-cell/Spellhound/issues" />
 
   <AppDomains>
     <AppDomain>https://spellhound.example</AppDomain>
@@ -105,7 +105,7 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://spellhound.example/index.html" />
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/vdfrz/Spellhound" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/vedantdas312-cell/Spellhound" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Spellhound for Word is ready" />

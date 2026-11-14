@@ -11,7 +11,7 @@
 
 ## Build delivery
 
-GitHub Actions runs the app and matter tests on pull requests, builds the production container and checks the install page and Word manifest. After a merge to main, the workflow publishes the same tested image to `ghcr.io/vdfrz/spellhound:sha-<full-commit>`. Use the recorded image digest for the pilot deployment once billing and the host are ready. Publishing an image does not start a cloud service.
+GitHub Actions runs the app and matter tests on pull requests, builds the production container and checks the install page and Word manifest. After a merge to main, the workflow publishes the same tested image to `ghcr.io/vedantdas312-cell/spellhound:sha-<full-commit>`. Use the recorded image digest for the pilot deployment once billing and the host are ready. Publishing an image does not start a cloud service.
 
 ## Credentials and launch
 
