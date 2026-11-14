@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { matters, type Entry, type Matter } from "@/features/matters/api";
 
-export function MatterItemPicker({ onPick }: { onPick: (matter: Matter, entry: Entry) => void }) {
+export function MatterItemPicker({ onPick, onLink }: { onLink?: (folder: Matter) => void; onPick: (matter: Matter, entry: Entry) => void }) {
   const [list, setList] = useState<Matter[]>([]);
   const [selected, select] = useState("");
   const [items, setItems] = useState<Entry[]>([]);
@@ -29,6 +29,7 @@ export function MatterItemPicker({ onPick }: { onPick: (matter: Matter, entry: E
     <label>Deal folder<select value={selected} onChange={e => {
       select(e.target.value); setItems([]); setStatus(e.target.value ? "Loading items…" : "");
     }}><option value="">Choose a deal folder</option>{list.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+    {matter && onLink && <button type="button" className="btn btn--sm" onClick={() => onLink(matter)}>Use {matter.name} for this document</button>}
     {status && <p role="status">{status}</p>}
     {matter && items.map(item => <button key={item.id} type="button" className="ctx-source" onClick={() => onPick(matter, item)}>
       {item.title} · {item.kind}

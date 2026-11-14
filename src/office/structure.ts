@@ -36,3 +36,33 @@ export async function readNumberedParagraphs(): Promise<NumberedParagraph[]> {
     });
   });
 }
+
+/** Act on the exact reference the checker reported. A bare Word search can
+ * land on an identical label belonging to the Original Agreement. */
+export async function actOnReference(
+  occurrence: import("@/lib/cross-references").ReferenceOccurrence,
+  comment?: string,
+): Promise<boolean> {
+  return runWord(async (context) => {
+    const paras = context.document.body.paragraphs;
+    paras.load("text");
+    await context.sync();
+    const paragraph = paras.items[occurrence.paragraphIndex];
+    if (!paragraph || paragraph.text.trim() !== occurrence.paragraphText) return false;
+
+    const { text, offset, paragraphText } = occurrence;
+    const ranges = paragraph.search(text, { matchCase: true, matchWholeWord: false, matchWildcards: false });
+    ranges.load("items");
+    await context.sync();
+    // Word can normalize spaces in a search. Fail closed if its occurrence
+    // count differs from the exact text we scanned.
+    if (ranges.items.length !== paragraphText.split(text).length - 1) return false;
+    const index = paragraphText.slice(0, offset).split(text).length - 1;
+    const range = ranges.items[index];
+    if (!range) return false;
+    if (comment) range.insertComment(comment);
+    else range.select(Word.SelectionMode.select);
+    await context.sync();
+    return true;
+  });
+}

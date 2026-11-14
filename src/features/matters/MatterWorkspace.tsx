@@ -4,9 +4,9 @@ import './matters.css';
 
 const failure = (e: unknown) => e instanceof Error ? e.message : 'Please try again.';
 
-export function MatterWorkspace({ target, initialText = '' }: { target: string; initialText?: string }) {
+export function MatterWorkspace({ target, initialText = '', linked, onLink }: { target: string; initialText?: string; linked?: Matter | null; onLink?: (folder: Matter | null) => void }) {
   const [list, setList] = useState<Matter[]>([]);
-  const [selected, select] = useState('');
+  const [selected, select] = useState(linked?.id ?? '');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
@@ -28,11 +28,16 @@ export function MatterWorkspace({ target, initialText = '' }: { target: string; 
     }}><label>New folder name<input value={name} maxLength={120} onChange={e => setName(e.target.value)} /></label>
       <button disabled={busy || !name.trim()}>Create folder</button></form>
     {error && <p role="alert">{error}</p>}
-    {selected && <Folder key={selected} initialText={initialText} matter={list.find(m => m.id === selected)!} />}
+    {onLink && linked && <p>Decision memory for this document: <strong>{linked.name}</strong> <button onClick={() => onLink(null)}>Unlink folder</button></p>}
+    {list.filter(m => m.id === selected).map(m => <div key={m.id}>
+      {onLink && m.id !== linked?.id && <button onClick={() => onLink(m)}>Use {m.name} for this document</button>}
+      {onLink && !linked && <p>Saving here links this document to the folder for future chats.</p>}
+      <Folder initialText={initialText} matter={m} onFiled={!linked && onLink ? () => onLink(m) : undefined} />
+    </div>)}
   </section>;
 }
 
-function Folder({ matter, initialText }: { matter: Matter; initialText: string }) {
+function Folder({ matter, initialText, onFiled }: { matter: Matter; initialText: string; onFiled?: () => void }) {
   const [rows, setRows] = useState<Entry[]>([]);
   const [memory, setMemory] = useState<Experience[] | null>(null);
   const [kind, setKind] = useState<Kind>('note');
@@ -56,7 +61,7 @@ function Folder({ matter, initialText }: { matter: Matter; initialText: string }
   return <section><h2>{matter.name}</h2>
     <form onSubmit={e => { e.preventDefault(); void run(async () => {
       const row = await matters.file(matter.id, kind, title, body);
-      setRows(xs => [row, ...xs]); setSaved(row.title); setTitle(''); setBody('');
+      onFiled?.(); setRows(xs => [row, ...xs]); setSaved(row.title); setTitle(''); setBody('');
     }); }}><fieldset disabled={busy}><legend>Save an item</legend>
       <label>Item type<select value={kind} onChange={e => { setKind(e.target.value as Kind); }}>
         <option value="note">Note</option><option value="decision">Decision</option><option value="reference">Reference</option>
