@@ -316,14 +316,17 @@ export function draftGeneratePrompt(
   const format = oneParagraph
     ? 'Return only the requested operative language as {"passage": string}. Use exactly one concise paragraph. Omit captions, introductory text, signature blocks and unrelated terms.'
     : 'Follow the scope in the instructions or title. For a clause, paragraph, or other excerpt return only that text as {"passage": string}, without a document heading. For a whole document, or if no narrower scope is requested, return {"sections": [{"title": string, "content": string}]} with the full ordered set of sections.';
+  const task = oneParagraph
+    ? `Draft a standalone US contract paragraph in a ${tone} tone${gov}. The brief controls its subject. Use the document title "${title}" only to interpret the brief. Include only obligations the brief requests. Do not add standard protections, exceptions, deadlines, or remedies on your own.`
+    : `You are drafting language for a US ${category} titled "${title}" in a ${tone} tone${gov}.`;
   return {
     system:
-      `${GROUNDING} You are drafting language for a US ${category} titled "${title}" in a ${tone} tone${gov}. ` +
+      `${GROUNDING} ${task} ` +
       `${format} Leave unknown party names, amounts, and dates as [bracketed placeholders]. ${JSON_ONLY}`,
     user:
       (specialInstructions ? `Instructions: ${specialInstructions}\n\n` : "") +
       (referenceText
         ? `Ground party names, defined terms, and specifics in this reference document where relevant:\n${referenceText.slice(0, 300_000)}`
-        : "Draft from standard, widely-used terms."),
+        : oneParagraph ? "Use the brief as the only source of substantive terms." : "Draft from standard, widely-used terms."),
   };
 }
