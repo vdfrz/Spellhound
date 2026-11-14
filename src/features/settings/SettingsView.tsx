@@ -269,7 +269,7 @@ export function SettingsView({
       )}
 
       <div className="settings-footer">
-        <a className="settings-footer__link" href="https://github.com/vdfrz/Spellhound/issues" target="_blank" rel="noreferrer">Help &amp; support</a>
+        <a className="settings-footer__link" href="https://github.com/vedantdas312-cell/Spellhound/issues" target="_blank" rel="noreferrer">Help &amp; support</a>
         <span className="settings-footer__ver">v{config.appVersion}</span>
       </div>
     </div>
