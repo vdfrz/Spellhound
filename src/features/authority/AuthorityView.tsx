@@ -124,17 +124,17 @@ export function AuthorityView() {
       <div className="stack authority-view">
         <ViewHeader
         title="Authority check"
-        info="Checks every case and statute citation in the document against Spellhound's US corpus. Found means a real matching authority exists, not that it is still good law, so confirm its current treatment before relying on it. No match can mean a hallucinated, mis-typed, or unreported citation, so confirm it yourself before you rely on it or file."
-        subtitle="Verify every case and statute citation in this document against Spellhound's US corpus. Catch citations that do not resolve to a real authority before you file or send."
+        info="Only extracted case citations are sent to CourtListener. Later treatment is not checked. Use Tools → Public legal research to read a source passage."
+        subtitle="Look up case citations from this document using your CourtListener token."
       />
         {citationAuthorityAvailable() ? (
           <Button variant="primary" className="btn--cta" onClick={run}>
             Check citations
           </Button>
         ) : (
-          <UpgradeGate title="Statute & good-law checks are on the hosted plan">
+          <UpgradeGate title="Case lookup needs a CourtListener token">
             To check whether cited cases exist, add your free CourtListener API token in Settings.
-            Full statute verification and good-law treatment are part of the Spellhound hosted plan.
+            For a manual U.S. Reports lookup without a token, open Tools → Public legal research.
           </UpgradeGate>
         )}
       </div>

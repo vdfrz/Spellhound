@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
+import { researchRoute } from "./server/research.mjs";
 import react from "@vitejs/plugin-react";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -35,7 +36,13 @@ function devHttps() {
 //   dictation.html  the microphone dialog (the pane iframe cannot get the mic)
 // Office requires HTTPS in production; local dev uses the office-addin dev certs.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: "local-public-research",
+    configureServer(server) {
+      const handle = researchRoute({ origin: (server.config.server.https ? "https" : "http") + "://localhost:" + server.config.server.port });
+      server.middlewares.use("/spellhound/research", (req, res, next) => { handle(req, res).catch(next); });
+    },
+  }],
   define: {
     __APP_VERSION__: JSON.stringify(pkgVersion),
   },

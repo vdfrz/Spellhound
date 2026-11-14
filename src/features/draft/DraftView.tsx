@@ -28,7 +28,6 @@ import { JURISDICTIONS, labelOf } from "@/features/review/constants";
 import { getReviewPrefs } from "@/lib/prefs";
 import { SaveToVaquill } from "@/features/integration/SaveToVaquill";
 import { useAppNav } from "@/app/nav";
-import { config } from "@/config";
 import { TransplantView } from "@/features/transplant/TransplantView";
 import { FillView } from "@/features/fill/FillView";
 import { ClauseLibraryView } from "@/features/clauses/ClauseLibraryView";
@@ -365,14 +364,7 @@ export function DraftView() {
           Generate a first-draft agreement and insert it into this document.
         </p>
         <p className="small muted" style={{ margin: 0 }}>
-          <a href={`${config.appBase}/templates`} target="_blank" rel="noreferrer">
-            Browse templates
-          </a>{" "}
-          or{" "}
-          <a href={`${config.appBase}/drafting`} target="_blank" rel="noreferrer">
-            open your saved drafts
-          </a>{" "}
-          in Spellhound.
+          The shared template and draft libraries are not available in this build.
         </p>
       </div>
 
