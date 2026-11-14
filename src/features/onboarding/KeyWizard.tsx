@@ -1,5 +1,4 @@
 import { notifyCommunityAuth } from "@/auth/session";
-import { isBuildCommunity, setByokMode } from "@/community/edition";
 import { ProviderKeyForm } from "./ProviderKeyForm";
 
 /**
@@ -24,7 +23,7 @@ export function KeyWizard() {
         </p>
       </div>
       <div className="card" style={{ padding: 14 }}>
-        <ProviderKeyForm onSaved={() => notifyCommunityAuth()} />
+        <ProviderKeyForm ownOnly onSaved={() => notifyCommunityAuth()} />
       </div>
       <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
         {LINKS.map((l) => (
@@ -33,21 +32,7 @@ export function KeyWizard() {
           </a>
         ))}
       </div>
-      {!isBuildCommunity() && (
-        <p className="small muted" style={{ margin: 0, textAlign: "center" }}>
-          Have a Spellhound account?{" "}
-          <button
-            type="button"
-            className="linkaction"
-            onClick={() => {
-              setByokMode(false);
-              window.location.reload();
-            }}
-          >
-            Sign in
-          </button>
-        </p>
-      )}
+
     </div>
   );
 }

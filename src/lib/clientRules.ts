@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 /**
  * Per-client negotiation rules, stored locally (add-in-origin localStorage), so a
  * lawyer's standing positions for a client ("Governing law: Delaware", "Cap at 12
@@ -35,7 +36,7 @@ function sanitize(raw: unknown): RulesMap {
 function load(): RulesMap {
   if (cache) return cache;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageName(STORAGE_KEY));
     cache = raw ? sanitize(JSON.parse(raw)) : {};
   } catch {
     cache = {};
@@ -56,7 +57,7 @@ export function setClientRules(clientId: string, rules: string[]): void {
   else delete next[clientId];
   cache = next;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(storageName(STORAGE_KEY), JSON.stringify(next));
   } catch {
     // localStorage unavailable (private mode / policy) - keep it in memory.
   }
@@ -90,7 +91,7 @@ let activeCache: string | null = null;
 export function getActiveClientId(): string {
   if (activeCache !== null) return activeCache;
   try {
-    activeCache = localStorage.getItem(ACTIVE_KEY) ?? "";
+    activeCache = localStorage.getItem(storageName(ACTIVE_KEY)) ?? "";
   } catch {
     activeCache = "";
   }
@@ -102,8 +103,8 @@ export function setActiveClientId(clientId: string): void {
   if (next === getActiveClientId()) return;
   activeCache = next;
   try {
-    if (next) localStorage.setItem(ACTIVE_KEY, next);
-    else localStorage.removeItem(ACTIVE_KEY);
+    if (next) localStorage.setItem(storageName(ACTIVE_KEY), next);
+    else localStorage.removeItem(storageName(ACTIVE_KEY));
   } catch {
     // localStorage unavailable - keep it in memory.
   }

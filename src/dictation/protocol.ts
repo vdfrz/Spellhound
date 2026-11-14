@@ -5,11 +5,10 @@
  * does not delegate the microphone, so `getUserMedia` / SpeechRecognition are
  * blocked there with no possible prompt. A top-level Office Dialog runs at our
  * own origin where the browser CAN prompt for the mic, so dictation actually
- * runs in the dialog and streams its transcript back here via `messageParent`
+ * runs in the dialog and returns the accepted transcript via `messageParent`
  * (strings only; the dialog is a separate browser context).
  */
 export type DictationMessage =
-  | { type: "transcript"; text: string } // running transcript (finalized + interim)
   | { type: "done"; text: string } // user accepted; final transcript
   | { type: "cancel" } // user dismissed without inserting
   | { type: "error"; message: string }; // mic denied / unsupported / recognition error

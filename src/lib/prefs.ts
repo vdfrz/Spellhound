@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 /**
  * Workspace preferences store for the add-in (the single source of truth for
  * the user's standing context).
@@ -49,7 +50,7 @@ function sanitize(raw: unknown): ReviewPrefs {
 /** Read the persisted preferences once at startup. */
 export function initReviewPrefs(): void {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(storageName(STORAGE_KEY));
     prefs = stored ? sanitize(JSON.parse(stored)) : DEFAULT_PREFS;
   } catch {
     prefs = DEFAULT_PREFS;
@@ -72,7 +73,7 @@ export function setReviewPrefs(update: Partial<ReviewPrefs>): void {
   }
   prefs = next;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(storageName(STORAGE_KEY), JSON.stringify(next));
   } catch {
     // localStorage unavailable (private mode / policy) -- keep it in memory.
   }

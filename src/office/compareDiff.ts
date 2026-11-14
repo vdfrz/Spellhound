@@ -1,4 +1,4 @@
-import { applyWordDiff, computeDiff, type DiffResult } from "office-word-diff";
+import { applyWordDiff, computeDiff } from "office-word-diff";
 import { OfficeError, runWord, serializeTrackChanges } from "./run";
 
 /**
@@ -33,6 +33,20 @@ export function computeCompareOps(openText: string, referenceText: string): Comp
   return computeDiff(openText, referenceText) as CompareOp[];
 }
 
+// Word includes manual page breaks in paragraph text; the reference extractor ignores them.
+function compareParagraph(text: string) {
+  return text.replace(/\f/g, "");
+}
+
+export function readCompareText(): Promise<string> {
+  return runWord(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items/text");
+    await context.sync();
+    return paragraphs.items.map(p => compareParagraph(p.text)).join("\n");
+  });
+}
+
 /**
  * Apply the open-document -> reference diff to the whole body as native Word
  * tracked changes. Non-destructive: the edit is a reviewable tracked change and
@@ -43,42 +57,41 @@ export function computeCompareOps(openText: string, referenceText: string): Comp
  * so it always matches the range's real content even if the document changed
  * since the preview was computed.
  */
-export async function applyCompareDiff(referenceText: string): Promise<DiffResult> {
+export async function applyCompareDiff(referenceText: string): Promise<void> {
   return serializeTrackChanges(() =>
     runWord(async (context) => {
       const doc = context.document;
-      doc.load("changeTrackingMode");
       const range = doc.body.getRange();
-      // Read the live baseline after the sync, immediately before diffing, so a
-      // late edit cannot smear the tracked change (same discipline as the
-      // single-clause redline path).
-      const priorMode = doc.changeTrackingMode;
-      doc.changeTrackingMode = Word.ChangeTrackingMode.trackAll;
+      doc.load("changeTrackingMode");
       range.load("text");
+      const paragraphs = doc.body.paragraphs;
+      paragraphs.load("items/text");
       await context.sync();
-
-      if (!range.text.trim()) {
-        try {
-          doc.changeTrackingMode = priorMode;
-          await context.sync();
-        } catch {
-          // fall through to the throw
-        }
-        throw new OfficeError("The open document has no text to compare.");
-      }
-
+      if (!range.text.trim()) throw new OfficeError("The open document has no text to compare.");
+      const priorMode = doc.changeTrackingMode;
+      const referenceParagraphs = referenceText.split("\n");
       try {
-        return await applyWordDiff(context, range, range.text, referenceText, {
-          enableTracking: true,
-          logLevel: "error",
-        });
-      } finally {
-        try {
-          doc.changeTrackingMode = priorMode;
-          await context.sync();
-        } catch {
-          // original error (if any) propagates
+        doc.changeTrackingMode = Word.ChangeTrackingMode.trackAll;
+        await context.sync();
+        if (paragraphs.items.length === referenceParagraphs.length) {
+          for (const [i, paragraph] of paragraphs.items.entries()) {
+            const next = referenceParagraphs[i];
+            if (compareParagraph(paragraph.text) !== next) {
+              const edit = await applyWordDiff(context, paragraph.getRange("Content"), paragraph.text, next, {
+                enableTracking: true, logLevel: "error",
+              });
+              if (!edit.success) throw new OfficeError("Word could not apply a difference. Check the tracked changes before retrying.");
+            }
+          }
+        } else {
+          const edit = await applyWordDiff(context, range, range.text, referenceText.replace(/\n/g, "\r"), {
+            enableTracking: true, logLevel: "error",
+          });
+          if (!edit.success) throw new OfficeError("Word could not apply the comparison. Check the tracked changes before retrying.");
         }
+      } finally {
+        doc.changeTrackingMode = priorMode;
+        await context.sync();
       }
     }),
   );

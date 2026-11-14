@@ -1,3 +1,4 @@
+import { isExternalReference, isSectionHeading } from "./cross-references";
 import type { NumberedParagraph } from "@/office/structure";
 
 /**
@@ -46,7 +47,11 @@ function findSection(paras: NumberedParagraph[], id: string): string | null {
     if (p.listString && cleanNumber(p.listString) === id) {
       return `${id} ${p.text}`.slice(0, TARGET_MAX);
     }
-    if (headingRe.test(p.text) || typedRe.test(p.text)) return p.text.slice(0, TARGET_MAX);
+    const heading = headingRe.exec(p.text);
+    if (heading && isSectionHeading(p.text, heading)) {
+      return p.text.slice(0, TARGET_MAX);
+    }
+    if (typedRe.test(p.text)) return p.text.slice(0, TARGET_MAX);
   }
   return null;
 }
@@ -54,7 +59,8 @@ function findSection(paras: NumberedParagraph[], id: string): string | null {
 function findSchedule(paras: NumberedParagraph[], type: string, id: string): string | null {
   const re = new RegExp(`^${type}\\s+${escapeId(id)}\\b`, "i");
   for (const p of paras) {
-    if (p.text && re.test(p.text)) return p.text.slice(0, TARGET_MAX);
+    const heading = re.exec(p.text);
+    if (heading && !isExternalReference(p.text, heading)) return p.text.slice(0, TARGET_MAX);
   }
   return null;
 }
@@ -70,6 +76,7 @@ export function resolveReference(paras: NumberedParagraph[], selection: string):
 
   const sec = SECTION_RE.exec(sel);
   if (sec) {
+    if (isExternalReference(sel, sec)) return null;
     const id = sec[1];
     const target = findSection(paras, id);
     return target ? { label: `Section ${id}`, targetText: target, anchor: target.slice(0, ANCHOR_MAX) } : null;
@@ -77,6 +84,7 @@ export function resolveReference(paras: NumberedParagraph[], selection: string):
 
   const sch = SCHEDULE_RE.exec(sel);
   if (sch) {
+    if (isExternalReference(sel, sch)) return null;
     const target = findSchedule(paras, sch[1], sch[2]);
     return target
       ? { label: `${cap(sch[1])} ${sch[2].toUpperCase()}`, targetText: target, anchor: target.slice(0, ANCHOR_MAX) }

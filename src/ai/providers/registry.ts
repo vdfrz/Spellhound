@@ -1,3 +1,4 @@
+import { hosted, verifyInstallation } from "@/auth/publik";
 import { ApiError } from "@/api/errors";
 import { getActiveProvider, getBaseUrl, getKey, getModel } from "@/ai/keys";
 import { makeChatCompletions, makeOpenAI } from "./openai";
@@ -25,7 +26,7 @@ function chatEndpoint(base: string): string {
 /** Construct a provider bound to a specific key + model (used by the key tester
  *  and getProvider). `baseUrl` is required for Ollama (defaults to localhost)
  *  and Azure (the deployment endpoint); ignored by the others. */
-export function makeProvider(
+function buildProvider(
   p: ProviderId,
   apiKey: string,
   model: string,
@@ -62,6 +63,16 @@ export function makeProvider(
     default:
       return makeOpenAI(apiKey, model);
   }
+}
+
+export function makeProvider(...args: Parameters<typeof buildProvider>): LlmProvider {
+  const provider = buildProvider(...args);
+  if (!hosted || provider.id === "publik") return provider;
+  // BYOK calls go directly to the selected provider; recheck the Word session first.
+  return { id:provider.id,
+    async chat(req) { await verifyInstallation(req.signal); return provider.chat(req); },
+    async stream(req, delta) { await verifyInstallation(req.signal); return provider.stream(req, delta); },
+  };
 }
 
 /** The provider bound to the user's saved key + model, or a NO_KEY error. */

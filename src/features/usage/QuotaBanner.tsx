@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 import { useEffect, useState } from "react";
 import { Banner } from "@/ui/primitives";
 import { XIcon } from "@/ui/icons";
@@ -44,7 +45,7 @@ export function QuotaBanner() {
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(DISMISS_KEY) === monthKey()) setDismissed(true);
+      if (localStorage.getItem(storageName(DISMISS_KEY)) === monthKey()) setDismissed(true);
     } catch {
       // localStorage unavailable; treat as not dismissed.
     }
@@ -69,7 +70,7 @@ export function QuotaBanner() {
   function dismiss() {
     setDismissed(true);
     try {
-      localStorage.setItem(DISMISS_KEY, monthKey());
+      localStorage.setItem(storageName(DISMISS_KEY), monthKey());
     } catch {
       // Persisting the dismissal failed; it will re-show next mount. Acceptable.
     }

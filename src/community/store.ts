@@ -1,3 +1,4 @@
+import { storageName } from "@/auth/publik";
 /**
  * Local persistence for the community edition, replacing the Supabase-backed CRUD
  * endpoints. Single-user, on-device, IndexedDB. No auth or org scoping needed.
@@ -12,7 +13,7 @@ export type StoreName = (typeof STORES)[number];
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(storageName(DB_NAME), DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       for (const name of STORES) {

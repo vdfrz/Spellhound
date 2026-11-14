@@ -4,9 +4,9 @@ import { Badge, Banner, Button } from "@/ui/primitives";
 import { Dropzone } from "@/ui/Dropzone";
 import { CheckIcon, CompareIcon, PlusIcon } from "@/ui/icons";
 import { errorMessage } from "@/api/errors";
-import { readDocumentText } from "@/office/document";
+
 import { extractTextFromFile } from "@/community/extractText";
-import { applyCompareDiff, computeCompareOps, type CompareOp } from "@/office/compareDiff";
+import { applyCompareDiff, computeCompareOps, readCompareText, type CompareOp } from "@/office/compareDiff";
 import { useAppNav } from "@/app/nav";
 import "./compare.css";
 
@@ -55,7 +55,7 @@ export function CommunityCompareView() {
     setApplyNote(null);
     try {
       const [openText, extracted] = await Promise.all([
-        readDocumentText(),
+        readCompareText(),
         extractTextFromFile(file),
       ]);
       if (!openText.trim()) {
@@ -74,12 +74,16 @@ export function CommunityCompareView() {
         });
         return;
       }
-      const ops = computeCompareOps(openText, extracted.text);
+      // Mammoth appends two newlines to each DOCX paragraph, including the last.
+      const referenceText = file.name.toLowerCase().endsWith(".docx")
+        ? extracted.text.replace(/\n\n$/, "").replace(/\n\n/g, "\n")
+        : extracted.text.replace(/\r\n?/g, "\n");
+      const ops = computeCompareOps(openText, referenceText);
       const added = ops.filter((o) => o[0] === 1).length;
       const removed = ops.filter((o) => o[0] === -1).length;
       setPhase({
         kind: "ready",
-        result: { ops, added, removed, referenceText: extracted.text, refName: extracted.filename },
+        result: { ops, added, removed, referenceText, refName: extracted.filename },
       });
     } catch (e) {
       setPhase({ kind: "error", message: errorMessage(e) });

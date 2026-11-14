@@ -1,4 +1,5 @@
 import { config } from "@/config";
+import { lookup, type SourceItem } from "./research";
 import { request } from "./http";
 import { ApiError } from "./errors";
 import { isCommunity } from "@/community/edition";
@@ -14,7 +15,7 @@ import type { ContextSnippet } from "@/lib/context-snippet";
  * hallucination to verify before relying on it.
  */
 
-export type Verdict = "verified" | "no_match" | "unrecognized" | "error";
+export type Verdict = "verified" | "no_match" | "unrecognized" | "leads" | "error";
 
 /** Good-law (treatment) tier for a verified case citation. */
 export type GoodLaw = "good" | "caution" | "unknown";
@@ -39,6 +40,7 @@ export interface AuthorityResult {
   context?: ContextSnippet;
   /** Which corpus this was checked against. Absent is treated as a case. */
   kind?: CitationKind;
+  leads?: SourceItem[];
   caseName?: string;
   court?: string;
   year?: string;
@@ -112,22 +114,6 @@ function cleanCourt(court?: string): string | undefined {
 }
 
 /**
- * Build the case link. Hosted: the in-app case page, so citations resolve
- * inside the product, never to an external host. Community (bring-your-own-key):
- * there is no hosted case page, so link to CourtListener's own opinion page
- * (the `absolute_url` the search returned) rather than a dead in-app URL.
- */
-function buildCaseUrl(clusterId?: number, absoluteUrl?: string): string | undefined {
-  if (isCommunity()) {
-    if (!absoluteUrl) return undefined;
-    return absoluteUrl.startsWith("http")
-      ? absoluteUrl
-      : `https://www.courtlistener.com${absoluteUrl.startsWith("/") ? "" : "/"}${absoluteUrl}`;
-  }
-  return clusterId !== undefined ? `${config.appBase}/cases/${clusterId}` : undefined;
-}
-
-/**
  * Best-effort forward-citation (treatment) count for a matched case.
  * Returns undefined on any failure so a match is never downgraded by it.
  */
@@ -190,6 +176,19 @@ export async function verifyCitation(
   // Route statute / regulation cites to the statutes corpus; everything else
   // is a case reporter and goes to the case-law lookup.
   if (isStatuteCitation(raw)) return verifyStatute(raw, count, signal);
+  if (isCommunity()) {
+    const response = await lookup("cases", raw, signal);
+    const official = response.items.find(item => item.verifiedReporter);
+    if (official) return { raw, count, verdict: "verified", caseName: official.title, caseUrl: official.url };
+    switch (response.status) {
+      case "found": return { raw, count, verdict: "leads", leads: response.items };
+      case "no_match": case "no_passage": case "unsupported": return { raw, count, verdict: "unrecognized" };
+      case "rate_limited": throw new ApiError("rate_limited", 429, "Publik search rate limit reached.");
+      case "no_credit": throw new ApiError("quota", 402, "Your Publik balance is too low for this search.");
+      case "unconfigured": case "key_rejected": throw new ApiError("unauthorized", 401, "Check your Publik search connection.");
+      default: throw new ApiError("server", 503, "Publik search is unavailable. Try again later.");
+    }
+  }
   try {
     const res = await request<LookupEntry[]>(
       `/api/v1/us/citation-lookup?citation=${encodeURIComponent(raw)}`,
@@ -215,7 +214,7 @@ export async function verifyCitation(
         court: cleanCourt(cluster.court ?? cluster.court_id),
         year: (cluster.date_filed ?? "").slice(0, 4) || undefined,
         clusterId,
-        caseUrl: buildCaseUrl(clusterId, cluster.absolute_url),
+        caseUrl: clusterId === undefined ? undefined : `${config.appBase}/cases/${clusterId}`,
         citedByCount,
       };
     }

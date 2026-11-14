@@ -1,3 +1,5 @@
+import { hosted } from "@/auth/publik";
+import { UsageChoice } from "@/features/auth/UsageChoice";
 import { useEffect, useState } from "react";
 import { Badge, Button, Field, Spinner } from "@/ui/primitives";
 import { Avatar } from "@/ui/Avatar";
@@ -20,7 +22,6 @@ import {
 import { JURISDICTIONS } from "@/features/review/constants";
 import { isCommunity } from "@/community/edition";
 import { AiProvidersCard } from "./AiProvidersCard";
-import { CourtListenerCard } from "./CourtListenerCard";
 import "./settings.css";
 
 
@@ -186,7 +187,7 @@ export function SettingsView({
             <Avatar name={displayName || email || "User"} size={36} />
             <div className="stack settings-account">
               {displayName && <span className="settings-account__name">{displayName}</span>}
-              <span className="small muted">{email || "Not signed in"}</span>
+              <span className="small muted">{hosted ? "Signed in with Publik on this installation" : email || "Local developer edition"}</span>
               {/* One organization row: a switcher when the user owns more than one
                   workspace, otherwise static text (so the active org is not shown
                   twice). Organizations are an account concept, so hide the row
@@ -211,12 +212,8 @@ export function SettingsView({
 
       {isCommunity() && <AiProvidersCard />}
 
-      {isCommunity() && <CourtListenerCard />}
 
-      {/* Anonymous usage: shown only when the ping is actually active (the hosted
-          BYOK build). Since BYOK users have no account, an anonymous once-a-day
-          install ping is the only way to count unique users; it is fully
-          disclosed and opt-out here. No documents, keys, or prompts are sent. */}
+      {hosted && <div className="card settings-card"><UsageChoice /></div>}
 
       {!isCommunity() && (
         <div className="card settings-card">
@@ -226,7 +223,7 @@ export function SettingsView({
       )}
 
       <div className="card settings-card">
-        <h2 className="settings-heading">Workspace defaults</h2>
+        <h2 className="settings-heading">Review defaults</h2>
         <p className="small muted settings-heading__hint">
           {isCommunity()
             ? "Set your default jurisdiction once. New reviews and the assistant use it automatically, so you never re-pick it."
