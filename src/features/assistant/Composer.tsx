@@ -1,3 +1,4 @@
+import type { Matter } from "@/features/matters/api";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { IconButton, Spinner } from "@/ui/primitives";
 import { AutoTextarea } from "@/ui/AutoTextarea";
@@ -60,6 +61,7 @@ export type ComposerMode = "ask" | "edit";
 
 interface ComposerProps {
   onSave?: () => void;
+  onLink?: (folder: Matter) => void;
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
@@ -96,7 +98,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     onScope,
     context,
     onContextChange,
-    onSave,
+    onSave, onLink,
     hasMatter,
     attachments,
     onAttach,
@@ -165,7 +167,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       )}
       {contextOpen && (
         <ContextMenu
-          onSave={onSave}
+          onSave={onSave} onLink={onLink}
           config={context}
           onChange={onContextChange}
           hasMatter={hasMatter}

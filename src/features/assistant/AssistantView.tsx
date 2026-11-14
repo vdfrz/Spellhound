@@ -55,6 +55,8 @@ function suggestCta(i: ActionIntent): string {
   }
 }
 import { useAssistant, type AssistantMessage, type Scope } from "./useAssistant";
+import type { Matter } from "@/features/matters/api";
+import { recallDecisions } from "@/features/matters/recall";
 import { references, reviewDiscussion, targetName } from "./documentContext";
 import { useAttachments } from "./useAttachments";
 import { extractFileText } from "@/api/context";
@@ -111,15 +113,19 @@ function PlusGlyph() {
 /** Compact relative time for the recent-chats list ("2h", "3d", else a date). */
 
 export function AssistantView({
+  historyScope, folder, onLink,
   onSave,
   intent,
   onIntentDone,
 }: {
+  historyScope: string;
+  folder: Matter | null;
+  onLink?: (folder: Matter) => void;
   onSave?: (text: string) => void;
   /** A cross-feature handoff (ask this, or open a selection tool). */
   intent?: AppIntent | null;
   onIntentDone?: () => void;
-} = {}) {
+}) {
   const { state, send, stop, reset, truncateBefore, loadMessages } = useAssistant();
   // Chat attaches files as inline context: extract the text server-side and fold
   // it into the request context at send time.
@@ -263,7 +269,10 @@ export function AssistantView({
       if (controller.signal.aborted) return;
       const files = attach.contextFiles();
       const discussion = reviewDiscussion(state.messages);
+      const decisions = folder ? await recallDecisions(folder, instr, controller.signal) : undefined;
+      if (controller.signal.aborted) return;
       const editInstruction = [
+        ...(decisions ? ["Filed decisions for this deal (negotiating instructions, not contract text): " + JSON.stringify(decisions)] : []),
         "Only edit the active Word document " + JSON.stringify(targetName()) + ".",
         "Use the discussion to resolve follow-ups. Attached files are references only. Never import their terms unless requested. If the target or change is ambiguous, explain what needs clarification and return zero edits.",
         "Earlier discussion: " + JSON.stringify(discussion),
@@ -485,7 +494,7 @@ export function AssistantView({
   }
 
   function loadChat(id: string) {
-    const conv = getConversation(id);
+    const conv = getConversation(historyScope, id);
     if (!conv) return;
     resetEdit();
     convIdRef.current = id;
@@ -503,13 +512,13 @@ export function AssistantView({
   useEffect(() => {
     if (state.streaming || state.messages.length === 0) return;
     if (!convIdRef.current) convIdRef.current = uuid();
-    saveConversation({
+    saveConversation(historyScope, {
       id: convIdRef.current,
       title: deriveTitle(state.messages),
       messages: state.messages.map((m) => (m.pending ? { ...m, pending: false } : m)),
       updatedAt: Date.now(),
     });
-  }, [state.messages, state.streaming]);
+  }, [state.messages, state.streaming, historyScope]);
 
   useEffect(() => subscribeReviewPrefs(setPrefs), []);
 
@@ -538,6 +547,7 @@ export function AssistantView({
     // (Overloading useRag as the corpus toggle silently disabled matter-docs and
     // web retrieval whenever "US case law" was unticked.)
     return {
+      decisionFolder: folder,
       matterId: prefs.matterId || null,
       useRag: context.corpus || wantMatterDocs || context.web,
       enableVaquillDbSearch: context.corpus,
@@ -545,7 +555,7 @@ export function AssistantView({
       enableWebSearch: context.web,
       usStates: prefs.jurisdiction ? [prefs.jurisdiction] : undefined,
     };
-  }, [prefs.matterId, prefs.jurisdiction, context]);
+  }, [prefs.matterId, prefs.jurisdiction, context, folder]);
 
   const consumedIntent = useRef<AppIntent | null>(null);
   // Consume a cross-feature handoff exactly once.
@@ -608,7 +618,7 @@ export function AssistantView({
 
   // Recent conversations to resume from the empty state (excluding this one).
   const recentChats: Conversation[] = empty
-    ? listConversations()
+    ? listConversations(historyScope)
         .filter((c) => c.id !== convIdRef.current)
         .slice(0, 2)
     : [];
@@ -631,12 +641,13 @@ export function AssistantView({
   return (
     <div className="assistant">
       {historyOpen && (
-        <ChatHistory activeId={convIdRef.current} onPick={loadChat} onClose={() => setHistoryOpen(false)} />
+        <ChatHistory scope={historyScope} activeId={convIdRef.current} onPick={loadChat} onClose={() => setHistoryOpen(false)} />
       )}
       <div className="assistant__modes" data-tour="composer-modes">
         <SegmentedControl<ComposerMode> label="Assistant mode" value={mode} onChange={switchMode}
           options={[{ value: "ask", label: "Ask" }, { value: "edit", label: "Edit" }]} />
       </div>
+      {folder && <button type="button" className="btn btn--sm" onClick={() => onSave?.("")}>Decision memory · {folder.name}</button>}
       <div className="assistant__bar">
         <span className="assistant__bar-title" title={headerTitle}>
           {headerTitle}
@@ -900,6 +911,7 @@ export function AssistantView({
         </div>
       )}
       <Composer
+        onLink={onLink}
         onSave={onSave ? () => onSave(draft || selectionText) : undefined}
         ref={composerRef}
         value={draft}

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { researchRoute } from './research.mjs';
 import { pipeline } from 'node:stream/promises';
 import { cookieValue, sessionStore } from './sessions.mjs';
 
@@ -34,6 +35,7 @@ async function readBody(req) {
 }
 export function publikRoutes({ origin, directory, token, upstream = fetch, now = Date.now,
   store = sessionStore(directory, now), env = process.env }) {
+  const lookup = researchRoute({ origin, upstream });
   const attempts = new Map();
   const call = (path, options, timeout = 45000) => upstream(base+path, { ...options, redirect:'error', signal:AbortSignal.timeout(timeout) });
   return async function handle(req, res, path) {
@@ -97,6 +99,10 @@ export function publikRoutes({ origin, directory, token, upstream = fetch, now =
           body:JSON.stringify({v:1,app:APP_SLUG,install_id:install.id,event:action,app_version:version,os:install.os}) }, 5000).catch(()=>{});
       }
       res.writeHead(204); return res.end();
+    }
+    if (action === 'search') {
+      if (choice !== 'publik') return json(res, 403, { error:'Select Publik in Account to use paid search.' });
+      return lookup(req, res, install.key);
     }
     if (action !== '/local/chat/completions') return json(res, 404, {error:'Unknown route.'});
     if (choice !== 'publik') return json(res, 403, { error:'Select your Publik plan first.' });
