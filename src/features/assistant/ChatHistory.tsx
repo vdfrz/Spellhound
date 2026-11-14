@@ -12,15 +12,17 @@ import "./chat-history.css";
  * click-away backdrop.
  */
 export function ChatHistory({
+  scope,
   activeId,
   onPick,
   onClose,
 }: {
+  scope: string;
   activeId: string | null;
   onPick: (id: string) => void;
   onClose: () => void;
 }) {
-  const [items, setItems] = useState<Conversation[]>(() => listConversations());
+  const [items, setItems] = useState<Conversation[]>(() => listConversations(scope));
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -33,8 +35,8 @@ export function ChatHistory({
   const filtered = q ? items.filter((c) => c.title.toLowerCase().includes(q)) : items;
 
   function remove(id: string) {
-    deleteConversation(id);
-    setItems(listConversations());
+    deleteConversation(scope, id);
+    setItems(listConversations(scope));
   }
 
   return (

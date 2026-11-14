@@ -1,3 +1,4 @@
+import type { Matter } from "@/features/matters/api";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { CheckIcon, FolderIcon, GlobeIcon, ScaleIcon, UploadIcon } from "@/ui/icons";
 import { attachAccept } from "@/api/context";
@@ -54,7 +55,7 @@ export function activeContextCount(config: ContextConfig, hasMatter: boolean): n
  * sheet above the composer with a click-away backdrop and Escape-to-close.
  */
 export function ContextMenu({
-  onSave,
+  onSave, onLink,
   config,
   onChange,
   hasMatter,
@@ -66,6 +67,7 @@ export function ContextMenu({
   onClose,
 }: {
   onSave?: () => void;
+  onLink?: (folder: Matter) => void;
   config: ContextConfig;
   onChange: (config: ContextConfig) => void;
   hasMatter: boolean;
@@ -108,7 +110,7 @@ export function ContextMenu({
         </div>
         {community && (picker ? <div className="ctx-menu__picker stack">
           <button type="button" className="btn btn--sm" onClick={() => setPicker(null)}>Back to sources</button>
-          {picker === "matter" ? <MatterItemPicker onPick={(matter, entry) => attachText(
+          {picker === "matter" ? <MatterItemPicker onLink={onLink ? folder => { onLink(folder); onClose(); } : undefined} onPick={(matter, entry) => attachText(
             matter.name + " — " + entry.title, entry.body
           )} /> : <Suspense fallback={<p>Opening research…</p>}><ResearchView initialSource={picker === "law" ? "uscode" : "parallel"}
             onAttach={item => attachText(item.citation, [item.title, item.citation, item.url, item.passage, "Treatment unknown"].join("\n"))} /></Suspense>}

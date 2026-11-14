@@ -45,9 +45,9 @@ function referenceText(ids: string[]): string {
 }
 
 function buildTiptap(title: string, sections: Section[]): TiptapNode {
-  const content: TiptapNode[] = [
+  const content: TiptapNode[] = title ? [
     { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: title.toUpperCase() }] },
-  ];
+  ] : [];
   for (const s of sections) {
     if (s.title) {
       content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: s.title }] });
@@ -63,6 +63,41 @@ function str(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v : fallback;
 }
 
+// Enforce a direct one-paragraph request even if the provider returns the
+// whole-document schema. "Include a one-paragraph clause" is a constraint on
+// a component of a larger draft and deliberately doesn't match.
+const PARAGRAPH_UNIT = /(?:a|one|1|single)(?:[ ,-]+(?:single|short|brief|concise))*[ -]+paragraph\b/.source;
+const DIRECT_PARAGRAPH = new RegExp(
+  String.raw`^(?:please\s+)?(?:(?:draft|write|generate|return|give me|provide|produce)\s+)?` +
+  String.raw`(?:(?:in|just|only|exactly|a|short|brief|concise)[ ,]+)*` + PARAGRAPH_UNIT, "i",
+);
+
+const FULL_DOCUMENT = /\b(?:full|complete|entire)\s+(?:[\w-]+\s+){0,3}(?:nda|agreement|contract|document)\b/i;
+
+function requestsOneParagraph(brief: string): boolean {
+  const direct = DIRECT_PARAGRAPH.exec(brief.trim());
+  if (direct) return !/^\s+(?:per|for each|for every)\b/i.test(brief.trim().slice(direct[0].length));
+  // A full-document instruction may constrain the size of a subpart.
+  if (FULL_DOCUMENT.test(brief)) return false;
+  return /\b(?:in|as|limited to)\s+(?:a\s+)?(?:single|one|1)[ -]+paragraph[.!?\s]*$/i.test(brief);
+}
+
+function parsedDraft(value: unknown) {
+  const raw = (value ?? {}) as { passage?: unknown; sections?: unknown };
+  const passage = str(raw.passage).trim();
+  const sections: Section[] = Array.isArray(raw.sections)
+    ? raw.sections.map((s) => {
+        const o = (s ?? {}) as Record<string, unknown>;
+        return { title: str(o.title), content: str(o.content).trim() };
+      }).filter((s) => s.content)
+    : [];
+  return { passage, sections };
+}
+
+function isSingleParagraph({ passage, sections }: ReturnType<typeof parsedDraft>): boolean {
+  return Boolean(passage) && !/[\r\n\u2028\u2029]/.test(passage) && sections.length === 0;
+}
+
 export async function startDraft(body: Record<string, unknown>): Promise<{ draftId: string; status: string }> {
   const category = str(body.category, "custom");
   const title = str(body.title, "Untitled draft");
@@ -70,29 +105,36 @@ export async function startDraft(body: Record<string, unknown>): Promise<{ draft
     ? body.reference_document_ids.filter((x): x is string => typeof x === "string")
     : [];
 
+  const instructions = str(body.special_instructions);
+  const oneParagraph = requestsOneParagraph(instructions) || (!FULL_DOCUMENT.test(instructions) && requestsOneParagraph(title));
   const p = draftGeneratePrompt(
     category,
     title,
     str(body.tone, "balanced"),
     str(body.governing_law_state),
-    str(body.special_instructions),
+    instructions,
     referenceText(refIds),
+    oneParagraph,
   );
-  const raw = (await runJson(p.system, p.user)) as { sections?: unknown };
-  const sections: Section[] = Array.isArray(raw.sections)
-    ? raw.sections.map((s) => {
-        const o = (s && typeof s === "object" ? s : {}) as Record<string, unknown>;
-        return { title: str(o.title), content: str(o.content) };
-      })
-    : [];
+  let draft = parsedDraft(await runJson(p.system, p.user));
+  if (oneParagraph && !isSingleParagraph(draft)) {
+    const retry = p.user + '\n\nReturn only {"passage":"..."} containing the requested single paragraph on one line.';
+    draft = parsedDraft(await runJson(p.system, retry));
+    if (!isSingleParagraph(draft)) {
+      throw new Error("The model did not return the requested single paragraph. Please try again.");
+    }
+  }
+  const { passage } = draft;
+  const sections = passage ? [{ title: "", content: passage }] : draft.sections;
+  if (!sections.length) throw new Error("The model returned an empty draft. Please try again.");
 
   const draftId = uuid();
   rows.set(draftId, {
     id: draftId,
     title,
     category,
-    content: buildTiptap(title, sections),
-    metadata: {},
+    content: buildTiptap(passage ? "" : title, sections),
+    metadata: passage ? { scope: "passage" } : {},
     generationStatus: "completed",
     generationProgress: { status: "completed", stepIndex: sections.length, totalSteps: sections.length },
     generationError: null,

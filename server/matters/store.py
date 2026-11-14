@@ -70,10 +70,11 @@ class Matters:
                 raise Problem(404, 'Matter not found.')
         return self.vault / mid
 
-    def entries(self, mid):
+    def entries(self, mid, kind=None):
         directory = self.authorized(mid)
         with database(directory / 'entries.sqlite', RECORDS) as db:
-            return [dict(r) for r in db.execute('SELECT * FROM entries ORDER BY rowid DESC')]
+            query = 'SELECT * FROM entries' + (' WHERE kind=?' if kind else '') + ' ORDER BY rowid DESC'
+            return [dict(r) for r in db.execute(query, (kind,) if kind else ())]
 
     def file(self, mid, kind, title, body):
         directory = self.authorized(mid)

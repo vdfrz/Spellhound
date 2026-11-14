@@ -23,6 +23,7 @@ interface DraftSection {
 }
 
 interface Draft {
+  scope?: "passage";
   title: string;
   sections: DraftSection[];
   fullText: string;
@@ -47,7 +48,7 @@ function buildDraftHtml(draft: Draft): string {
     .map((paragraph) => renderParagraph(paragraph, sectionTitles))
     .filter((html) => html.length > 0)
     .join("");
-  return `<h1>${escapeHtml(draft.title)}</h1>${body}`;
+  return draft.scope === "passage" ? body : `<h1>${escapeHtml(draft.title)}</h1>${body}`;
 }
 
 /**

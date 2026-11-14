@@ -194,6 +194,8 @@ export interface DraftAuthority {
 }
 
 export interface DraftResult {
+  /** Insert and copy a scoped excerpt without document or section headings. */
+  scope?: "passage";
   draftId: string;
   title: string;
   category: string;
@@ -412,13 +414,15 @@ function draftResultFromRow(row: DraftRow): DraftResult {
   const blocks = Array.isArray(doc?.content) ? (doc?.content as TiptapNode[]) : [];
   const sections = sectionsFromDoc(blocks);
   const meta = row.metadata ?? {};
+  const passage = meta.scope === "passage";
   const quality = (meta as { quality_score?: unknown }).quality_score;
   const issues = (meta as { issues?: unknown }).issues;
   return {
     draftId: row.id || "",
     title,
     category: row.category || "",
-    fullText: buildFullText(title, sections),
+    ...(passage ? { scope: "passage" as const } : {}),
+    fullText: passage ? sections.map((s) => s.content).join("\n\n") : buildFullText(title, sections),
     sections,
     qualityScore: typeof quality === "number" ? quality : undefined,
     issues: Array.isArray(issues) ? (issues as DraftIssue[]) : undefined,
