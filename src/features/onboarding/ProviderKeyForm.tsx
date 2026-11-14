@@ -71,16 +71,18 @@ function isKnownModel(provider: ProviderId, model: string): boolean {
   return MODEL_OPTIONS[provider].some((m) => m.id === model);
 }
 
-export function ProviderKeyForm({ onSaved }: { onSaved?: () => void }) {
-  const [provider, setProvider] = useState<ProviderId>(getActiveProvider());
-  const [model, setModelValue] = useState<string>(getModel(getActiveProvider()));
+export function ProviderKeyForm({ onSaved, ownOnly = false }: { onSaved?: () => void; ownOnly?: boolean }) {
+  const active = getActiveProvider();
+  const initial = ownOnly && active === "publik" ? "openai" : active;
+  const [provider, setProvider] = useState<ProviderId>(initial);
+  const [model, setModelValue] = useState<string>(getModel(initial));
   // A saved model that is not in the curated list (a newer or provider-specific
   // one the user typed) starts the form in custom mode so it stays editable.
   const [custom, setCustom] = useState<boolean>(
-    () => !isKnownModel(getActiveProvider(), getModel(getActiveProvider())),
+    () => !isKnownModel(initial, getModel(initial)),
   );
-  const [key, setKeyValue] = useState<string>(getKey(getActiveProvider()) ?? "");
-  const [baseUrl, setBaseUrlValue] = useState<string>(getBaseUrl(getActiveProvider()));
+  const [key, setKeyValue] = useState<string>(getKey(initial) ?? "");
+  const [baseUrl, setBaseUrlValue] = useState<string>(getBaseUrl(initial));
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   function switchProvider(p: ProviderId) {
@@ -158,7 +160,7 @@ export function ProviderKeyForm({ onSaved }: { onSaved?: () => void }) {
     <div className="stack" style={{ gap: 12 }}>
       <Field label="AI provider">
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-          {PROVIDERS.map((p) => {
+          {PROVIDERS.filter(p => !ownOnly || p !== "publik").map((p) => {
             const logo = PROVIDER_LOGO[p];
             const on = p === provider;
             return (
@@ -206,7 +208,7 @@ export function ProviderKeyForm({ onSaved }: { onSaved?: () => void }) {
               {m.label}
             </option>
           ))}
-          <option value={CUSTOM}>Other (enter model id)</option>
+          {provider !== "publik" && <option value={CUSTOM}>Other (enter model id)</option>}
         </select>
         {custom && (
           <input
@@ -263,7 +265,7 @@ export function ProviderKeyForm({ onSaved }: { onSaved?: () => void }) {
         </Field>
       ) : (
         <p className="small muted" style={{ margin: 0 }}>
-          No API key needed. Ollama runs on your machine.
+          {provider === "publik" ? "Requests use your Publik balance." : "No API key is needed for Ollama."}
         </p>
       )}
 
@@ -288,7 +290,8 @@ export function ProviderKeyForm({ onSaved }: { onSaved?: () => void }) {
 
       <p className="small muted" style={{ margin: 0 }}>
         {provider === "ollama"
-          ? "Everything runs on this device against your local Ollama server. Nothing leaves your machine."
+          ? "Requests go to your configured Ollama server."
+          : provider === "publik" ? "Publik processes your AI requests."
           : `Your key stays on this device and is sent only to ${PROVIDER_LABELS[provider]}.`}
       </p>
     </div>

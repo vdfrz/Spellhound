@@ -1,3 +1,4 @@
+import { hosted, installHeaders } from "@/auth/publik";
 import { ApiError } from "@/api/errors";
 import { readSse } from "./sse";
 import type { ChatAttachment, ChatRequest, LlmProvider, ProviderId } from "./types";
@@ -116,13 +117,25 @@ export function makeChatCompletions(cfg: ChatCompletionsConfig): LlmProvider {
     try {
       res = await fetch(endpoint, {
         method: "POST",
-        headers: headers(),
+        headers: id === "publik" && hosted ? {...headers(), ...installHeaders()} : headers(),
         body: JSON.stringify(body),
         signal: req.signal,
       });
     } catch (e) {
       if ((e as Error).name === "AbortError") throw e;
       throw new ApiError("network", 0, `Cannot reach ${brand}. Check your connection${id === "ollama" ? " and that the Ollama server is running" : ""}.`);
+    }
+    if (id === "publik" && hosted && !res.ok) {
+      if (res.status === 402) {
+        const e = await res.json().catch(() => ({}));
+        const message = typeof e.error === "string" ? e.error : "Your Publik balance is empty.";
+        window.dispatchEvent(new CustomEvent("spellhound:credit", {detail:{message, link:e.topUpUrl}}));
+        throw new ApiError("invalid", 402, message);
+      }
+      if ([401,403,409].includes(res.status)) {
+        window.dispatchEvent(new Event("spellhound:recheck"));
+        throw new ApiError("unauthorized", res.status, "Check your Publik session or payment choice.");
+      }
     }
     if (!res.ok) throw mapError(brand, res.status, await res.text().catch(() => ""));
     return res;

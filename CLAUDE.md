@@ -1,3 +1,5 @@
+> Historical upstream architecture notes. For Spellhound sign-in, service, hosting and install instructions, use [DEPLOY.md](DEPLOY.md). The previous authentication service has been removed.
+
 # CLAUDE.md
 
 Vaquill for Microsoft Word - a Word task-pane add-in. Vite + React 18 + TypeScript SPA, Office.js (WordApi 1.6 floor), Supabase auth. Thin client over the existing Vaquill FastAPI backend.

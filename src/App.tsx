@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
+import type { User } from "@/auth/session";
 import type { ReactNode } from "react";
 import { Header } from "@/ui/Header";
-import { Button, IconButton, SegmentedControl, Spinner } from "@/ui/primitives";
+import { Button, IconButton, SegmentedControl } from "@/ui/primitives";
 import { Avatar } from "@/ui/Avatar";
 import {
   ReviewIcon,
@@ -13,9 +13,7 @@ import {
   HelpIcon,
   ChevronIcon,
 } from "@/ui/icons";
-import { subscribe, clearSession } from "@/auth/session";
-import { getMe } from "@/api/account";
-import { LoginView } from "@/features/auth/LoginView";
+import { subscribe } from "@/auth/session";
 import { ReviewView } from "@/features/review/ReviewView";
 import { ChangesView } from "@/features/review/ChangesView";
 import { CompareView } from "@/features/compare/CompareView";
@@ -32,7 +30,6 @@ import { TourProvider, useTour } from "@/tour/TourProvider";
 import { GuidesMenu } from "@/tour/GuidesMenu";
 import { WELCOME_TOUR_ID } from "@/tour/registry";
 import { resetToursSeen } from "@/tour/tourStore";
-import { isCommunity } from "@/community/edition";
 import { KeyWizard } from "@/features/onboarding/KeyWizard";
 import { subscribeActiveOrg } from "@/lib/org";
 import "./styles/app.css";
@@ -70,11 +67,6 @@ function AppShell() {
   const { tab, setTab, reviewSub, setReviewSub, intent, navigate, clearIntent } = useAppNav();
   const { startIfUnseen, start } = useTour();
   const [user, setUser] = useState<User | null>(null);
-  // Registration gate: a valid Supabase session is not enough. A bare OAuth
-  // identity that authenticated but never signed up (no account) must not reach
-  // the app. "checking" while we confirm via /auth/me; "ok" once confirmed.
-  const [regState, setRegState] = useState<"idle" | "checking" | "ok">("idle");
-  const [authNotice, setAuthNotice] = useState<string | null>(null);
   // Bumped whenever the active organization changes, to remount the data views
   // (matters/drafts/playbooks/clients) so they refetch under the new org.
   const [orgVersion, setOrgVersion] = useState(0);
@@ -84,38 +76,7 @@ function AppShell() {
   useEffect(() => subscribe(setUser), []);
   useEffect(() => subscribeActiveOrg(() => setOrgVersion((v) => v + 1)), []);
 
-  // When a session appears, confirm the identity is actually a registered account
-  // before showing the app. An unregistered identity is signed out and sent to
-  // sign up. Fail open: a transient /auth/me failure must never lock out a real
-  // user, so only an explicit initialized === false blocks.
-  useEffect(() => {
-    if (!user) {
-      setRegState("idle");
-      return;
-    }
-    let alive = true;
-    setRegState("checking");
-    getMe()
-      .then((me) => {
-        if (!alive) return;
-        if (me.initialized === false) {
-          setAuthNotice(
-            "You do not have a Spellhound account yet. Create one on the web, then sign in here.",
-          );
-          clearSession(); // -> subscribe fires user=null -> back to the login screen
-        } else {
-          setRegState("ok");
-        }
-      })
-      .catch(() => {
-        if (alive) setRegState("ok");
-      });
-    return () => {
-      alive = false;
-    };
-  }, [user]);
-
-  const authed = !!user && regState === "ok";
+  const authed = !!user;
 
   // First run: once the user is confirmed, start the welcome walkthrough unless
   // they have already completed (or skipped) it. It drives the tabs itself.
@@ -283,16 +244,7 @@ function AppShell() {
           </div>
         )}
         {!authed ? (
-          regState === "checking" ? (
-            <div className="login">
-              <Spinner />
-              <p className="login__sub small">Signing you in...</p>
-            </div>
-          ) : isCommunity() ? (
-            <KeyWizard />
-          ) : (
-            <LoginView notice={authNotice} />
-          )
+          <KeyWizard />
         ) : showSettings ? (
           <div className="stack" style={{ gap: 8 }}>
             <Button
