@@ -27,7 +27,7 @@ const server = https.createServer({cert:readFileSync('local.crt'),key:readFileSy
         parts.push(part);
       }
       const body=JSON.parse(Buffer.concat(parts).toString());
-      if(body.model !== 'publik-balanced') return fail(400,'Select Publik Balanced in Settings.');
+      if(body.model !== 'publik-smart') return fail(400,'Select Publik Smart in Settings.');
       const upstream=await fetch('https://publikhq.com/api/v1/chat/completions',{method:'POST',redirect:'error',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(180000)});
       if(!upstream.ok) return fail(upstream.status, upstream.status === 402 ? 'Publik reports insufficient credit.' : 'Publik returned HTTP '+upstream.status);
       res.writeHead(200,{'Content-Type':upstream.headers.get('content-type') || 'application/json','Cache-Control':'no-store'});

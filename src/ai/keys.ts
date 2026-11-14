@@ -40,7 +40,7 @@ const KNOWN_PROVIDERS: ProviderId[] = ["publik", "openai", "anthropic", "gemini"
 /** A small curated list per provider. New models are a one-line add here. Azure
  *  lists nothing because the "model" is the user's own deployment name. */
 export const MODEL_OPTIONS: Record<ProviderId, ModelOption[]> = {
-  publik: [{ id: "publik-balanced", label: "Publik Balanced" }],
+  publik: [{ id: "publik-smart", label: "Publik Smart" }],
   openai: [
     { id: "gpt-5.4-mini", label: "GPT-5.4 mini (fast, low cost)" },
     { id: "gpt-5.5", label: "GPT-5.5 (highest quality)" },
@@ -69,7 +69,7 @@ export const MODEL_OPTIONS: Record<ProviderId, ModelOption[]> = {
 };
 
 const DEFAULT_MODEL: Record<ProviderId, string> = {
-  publik: "publik-balanced",
+  publik: "publik-smart",
   openai: "gpt-5.4-mini",
   anthropic: "claude-sonnet-5",
   gemini: "gemini-2.5-flash",
@@ -165,6 +165,8 @@ export function clearAllProviderKeys(): void {
 }
 
 export function getModel(p: ProviderId): string {
+  // Ignore the previous Publik tier saved by older installations.
+  if (p === "publik") return DEFAULT_MODEL.publik;
   return read(`${p}.model`) || DEFAULT_MODEL[p];
 }
 
