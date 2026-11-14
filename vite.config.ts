@@ -39,7 +39,12 @@ export default defineConfig(({mode}) => ({
     name: "local-public-research",
     configureServer(server) {
       const handle = researchRoute({ origin: (server.config.server.https ? "https" : "http") + "://localhost:" + server.config.server.port });
-      server.middlewares.use("/spellhound/research", (req, res, next) => { handle(req, res).catch(next); });
+      server.middlewares.use("/spellhound/research", (req, res, next) => {
+        const localHost = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host ?? "");
+        const localClient = ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress ?? "");
+        const key = localHost && localClient && mode === "community" ? process.env.PUBLIK_API_KEY : undefined;
+        handle(req, res, key).catch(next);
+      });
     },
   }, {
     name: "spellhound-edition",

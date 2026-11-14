@@ -16,7 +16,6 @@ import {
   rewritePrompt,
   riskPrompt,
 } from "@/ai/prompts";
-import { searchCitation } from "./courtlistener";
 import { getDraftRow, startDraft } from "./draft";
 import { runJson } from "./llm";
 import { del, getAll, put } from "./store";
@@ -403,14 +402,9 @@ async function handlePlaybooksCrud(
   return null;
 }
 
-/** Case-law authority: verified browser-direct against the user's CourtListener
- *  token. Statute resolution and good-law treatment have no BYOK equivalent, so
- *  they return an empty/negative result the best-effort callers tolerate. */
+/** Legacy endpoints without a local corpus or treatment data. */
 async function handleAuthority(method: string, path: string): Promise<unknown> {
-  const [clean, query = ""] = path.split("?");
-  if (method === "GET" && clean === "/api/v1/us/citation-lookup") {
-    return searchCitation(new URLSearchParams(query).get("citation") ?? "");
-  }
+  const [clean] = path.split("?");
   if (method === "GET" && /^\/api\/v1\/us\/case\/[^/]+\/citations$/.test(clean)) {
     return {}; // forward-citation count is not available browser-direct.
   }

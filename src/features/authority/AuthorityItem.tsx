@@ -18,6 +18,7 @@ function verdictBadge(verdict: Verdict) {
           <CheckIcon size={11} /> Found
         </Badge>
       );
+    case "leads": return <Badge tone="neutral">Search results</Badge>;
     case "no_match":
       return (
         <Badge tone="red">
@@ -95,7 +96,7 @@ function commentText(r: AuthorityResult): string {
     const treatment = g ? ` Treatment: ${goodLawWord(g.status)}${g.label ? ` - ${g.label}` : ""}.` : " Treatment unknown.";
     return `${name}${yr}: found in the case source. Confirm current treatment (not overruled or superseded) before relying on it.${treatment}${source}`;
   }
-  return `No matching case found in the corpus for ${r.raw}. Verify this citation manually before relying on it.`;
+  return `The case citation ${r.raw} needs manual verification. Later treatment is unknown.`;
 }
 
 export function AuthorityItem({ result }: { result: AuthorityResult }) {
@@ -161,6 +162,10 @@ export function AuthorityItem({ result }: { result: AuthorityResult }) {
         </p>
       )}
 
+      {result.verdict === "leads" && <div className="stack">
+        <span className="small muted">Open the opinions to check the citation. Later treatment is unknown.</span>
+        {result.leads?.map((item, i) => <a key={i + item.url} href={item.url} target="_blank" rel="noreferrer">{item.title}</a>)}
+      </div>}
       {result.verdict === "verified" && isStatute && (
         <div className="stack" style={{ gap: 1 }}>
           {result.label && <span className="authority__name">{result.label}</span>}
@@ -240,7 +245,7 @@ export function AuthorityItem({ result }: { result: AuthorityResult }) {
                 onSelect: () =>
                   navigate("assistant", {
                     kind: "assistantAsk",
-                    prompt: `The citation "${result.raw}" did not resolve in Spellhound's US corpus. Help me find the correct authority, or tell me whether it looks misstated or nonexistent.`,
+                    prompt: `The citation "${result.raw}" could not be verified. Help me find the correct authority, or tell me whether it looks misstated or nonexistent.`,
                     autoSend: true,
                   }),
               });
