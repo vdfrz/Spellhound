@@ -6,7 +6,6 @@ import { LocateIcon, CheckIcon, XIcon, AlertTriangleIcon } from "@/ui/icons";
 import { locateInDocument } from "@/office/navigate";
 import { commentOnCitation } from "@/office/citations";
 import { useAppNav } from "@/app/nav";
-import { config } from "@/config";
 import type { AuthorityResult, GoodLaw, Verdict } from "@/api/authority";
 
 function verdictBadge(verdict: Verdict) {
@@ -79,19 +78,8 @@ function corpusLabel(corpusType?: string): string | undefined {
   }
 }
 
-/**
- * The link to include in the document comment. Statutes resolve to an in-app
- * section URL; cases use an in-app case link built from the cluster id. We
- * deliberately do NOT use the external corpus host here: a comment travels with
- * the .docx, so its link must point to our own app, not a third-party source.
- */
-function commentUrl(r: AuthorityResult): string | undefined {
-  if (r.kind === "statute") return r.sectionUrl;
-  return r.clusterId ? `${config.appBase}/cases/${r.clusterId}` : undefined;
-}
-
 function commentText(r: AuthorityResult): string {
-  const url = commentUrl(r);
+  const url = r.kind === "statute" ? r.sectionUrl : r.caseUrl;
   const source = url ? ` Source: ${url}` : "";
   if (r.kind === "statute") {
     if (r.verdict === "verified") {
@@ -104,8 +92,8 @@ function commentText(r: AuthorityResult): string {
     const name = r.caseName ?? "This citation";
     const yr = r.year ? ` (${r.year})` : "";
     const g = r.goodLaw;
-    const treatment = g ? ` Treatment: ${goodLawWord(g.status)}${g.label ? ` - ${g.label}` : ""}.` : "";
-    return `${name}${yr}: found in Spellhound's US case-law corpus. Confirm current treatment (not overruled or superseded) before relying on it.${treatment}${source}`;
+    const treatment = g ? ` Treatment: ${goodLawWord(g.status)}${g.label ? ` - ${g.label}` : ""}.` : " Treatment unknown.";
+    return `${name}${yr}: found in the case source. Confirm current treatment (not overruled or superseded) before relying on it.${treatment}${source}`;
   }
   return `No matching case found in the corpus for ${r.raw}. Verify this citation manually before relying on it.`;
 }
@@ -161,8 +149,7 @@ export function AuthorityItem({ result }: { result: AuthorityResult }) {
           {verdictBadge(result.verdict)}
           {!isStatute &&
             result.verdict === "verified" &&
-            result.goodLaw &&
-            goodLawBadge(result.goodLaw.status)}
+            goodLawBadge(result.goodLaw?.status ?? "unknown")}
         </div>
       </div>
 

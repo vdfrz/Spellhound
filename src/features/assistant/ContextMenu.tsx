@@ -141,8 +141,7 @@ export function ContextMenu({
         })}
         {community ? (
           <p className="ctx-menu__note small muted">
-            Case law, matter documents, and web search are available with a connected Spellhound workspace. Attach a
-            file below to add your own context.
+            For public sources, open Tools → Public legal research. To ask about a private file, attach it here.
           </p>
         ) : (
           !hasMatter && (

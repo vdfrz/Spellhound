@@ -3,7 +3,7 @@ import { Markdown, type CitationCtx } from "./markdown";
 import { IconButton } from "@/ui/primitives";
 import { CopyIcon, EditIcon, CheckIcon } from "@/ui/icons";
 import { insertHtmlAtCursor } from "@/office/richInsert";
-import { markdownToSafeHtml } from "@/api/research";
+import { markdownToSafeHtml } from "@/lib/markdownToSafeHtml";
 import { copyPlain, copyRich } from "@/lib/clipboard";
 import { stripMarkdown } from "@/lib/strings";
 import { config } from "@/config";

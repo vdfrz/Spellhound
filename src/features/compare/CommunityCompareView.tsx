@@ -210,8 +210,7 @@ export function CommunityCompareView() {
       />
 
       <p className="small muted" style={{ margin: 0 }}>
-        Compares on this device. Nothing is uploaded. For PDF references, formatting-aware diffs, and
-        an AI change summary, use the Spellhound hosted plan.
+        Compares on this device. Nothing is uploaded. PDF references, formatting changes and AI summaries are not supported.
       </p>
 
       {phase.kind === "error" && <Banner tone="danger">{phase.message}</Banner>}

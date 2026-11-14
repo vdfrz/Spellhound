@@ -14,6 +14,7 @@ import { getCourtListenerToken } from "@/ai/keys";
 const BASE = "https://www.courtlistener.com/api/rest/v4";
 
 interface CLSearchResult {
+  citation?: string[];
   cluster_id?: number;
   caseName?: string;
   court?: string;
@@ -48,7 +49,7 @@ export async function searchCitation(raw: string): Promise<LookupEntry[]> {
       "NO_CL_TOKEN",
     );
   }
-  const url = `${BASE}/search/?type=o&q=${encodeURIComponent(`"${raw}"`)}`;
+  const url = `${BASE}/search/?type=o&q=${encodeURIComponent(`citation:"${raw}"`)}`;
   let res: Response;
   try {
     res = await fetch(url, { headers: { Authorization: `Token ${token}` } });
@@ -65,8 +66,11 @@ export async function searchCitation(raw: string): Promise<LookupEntry[]> {
   if (!res.ok) throw new ApiError("server", res.status, "CourtListener request failed.");
 
   const data = (await res.json()) as CLSearchResponse;
-  const first = data.results?.[0];
-  if ((data.count ?? 0) > 0 && first) {
+  // A decision merely mentioning the citation is not the cited decision.
+  const normalize = (cite: string) => cite.toLowerCase().replace(/[.\s]/g, "");
+  const matches = data.results?.filter(row => row.citation?.some(cite => normalize(cite) === normalize(raw))) ?? [];
+  if (data.count === 1 && matches.length === 1) {
+    const first = matches[0];
     return [
       {
         citation: raw,
@@ -83,5 +87,6 @@ export async function searchCitation(raw: string): Promise<LookupEntry[]> {
       },
     ];
   }
+  if (data.count !== 0) return []; // ambiguous/incomplete evidence: unresolved.
   return [{ citation: raw, status: 404, clusters: [] }];
 }

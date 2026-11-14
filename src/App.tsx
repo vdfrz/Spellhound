@@ -40,9 +40,7 @@ import "./styles/app.css";
 /**
  * Four primary modes, each a job you do to the document open in front of you:
  * Review (read + mark up), Draft (write new language), Assistant (ask the doc),
- * Tools (finalize / QA utilities). Everything that does not need the open
- * document (case-law research, playbook + template + draft libraries) lives on
- * the web app and is reached by a deep-link, not a tab.
+ * Tools (document checks, public research and preparation for sending).
  */
 // Order leads with the Assistant (the default landing tab and the most flexible
 // entry point: ask about the doc, or switch to Edit for redlines), then the
