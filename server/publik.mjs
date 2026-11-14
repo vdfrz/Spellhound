@@ -110,7 +110,7 @@ export function publikRoutes({ origin, directory, token, upstream = fetch, now =
     try { body = await readBody(req); } catch (e) {
       return json(res, e instanceof RangeError ? 413 : 400, { error:'Invalid or oversized chat request.' });
     }
-    if (body?.model !== 'publik-balanced' || !Array.isArray(body.messages)) return json(res, 400, {error:'Invalid chat request.'});
+    if (body?.model !== 'publik-smart' || !Array.isArray(body.messages)) return json(res, 400, {error:'Invalid chat request.'});
     const result = await call('/api/v1/chat/completions', { method:'POST', headers:{...headers,'Content-Type':'application/json'}, body:JSON.stringify(body) });
     if (result.status === 402) {
       const e = (await result.json().catch(()=>({}))).error;

@@ -29,6 +29,7 @@ async function pilot(t, token = 'pat_fixture') {
       return Response.json({results:[]});
     }
     assert.ok(url.endsWith('/chat/completions'));
+    assert.equal(JSON.parse(opts.body).model, 'publik-smart');
     billed.push(n); return Response.json({choices:[]});
   }});
   const server = createServer((req,res) => handler(req,res,req.url).catch(()=>{res.writeHead(502);res.end();}));
@@ -37,7 +38,7 @@ async function pilot(t, token = 'pat_fixture') {
   const post = (action,install={},headers={},body) => fetch('http://127.0.0.1:'+server.address().port+
     (action==='chat'?'/local/chat/completions':'/spellhound/session/'+action),{method:'POST',headers:{
       origin,'user-agent':'Word Macintosh',cookie:install.cookie??'','x-spellhound-install':install.id??'',...headers},
-    body:JSON.stringify(body??{model:'publik-balanced',messages:[{role:'user',content:'synthetic test'}]})});
+    body:JSON.stringify(body??{model:'publik-smart',messages:[{role:'user',content:'synthetic test'}]})});
   async function start() {
     const r=await post('start'); assert.equal(r.status,201); const header=r.headers.get('set-cookie');
     for(const flag of ['Secure','HttpOnly','Partitioned','SameSite=None']) assert.ok(header.includes(flag));
@@ -65,6 +66,7 @@ test('separate installs, browser claim, payment choice, stale pane, revocation a
   assert.equal((await p.post('chat',a)).status,403);
   p.wallets[0].balance_micros=500;
   assert.equal((await p.post('choose/publik',a)).status,200);
+  assert.equal((await p.post('chat', a, {}, {model:'publik-balanced', messages:[]})).status, 400);
   assert.equal((await p.post('chat',a)).status,200);
   assert.equal((await p.post('chat',b)).status,403);
   assert.equal((await p.post('chat',{...a,id:b.id})).status,409);
