@@ -38,7 +38,8 @@ jobs:
             --env SPELLHOUND_ORIGIN=https://pilot.invalid "spellhound:$GITHUB_SHA"
           trap 'docker logs pilot; docker rm -f pilot' EXIT
           base=http://127.0.0.1:18080
-          curl -fsS --retry 10 --retry-connrefused --retry-delay 1 "$base/health" | grep -Fx ok
+          curl -fsS --retry 10 --retry-all-errors --retry-delay 1 --max-time 5 "$base/health" -o "$RUNNER_TEMP/health"
+          grep -Fx ok "$RUNNER_TEMP/health"
           curl -fsS "$base/" | grep -Fq '/manifest.xml'
           curl -fsS "$base/manifest.xml" > "$RUNNER_TEMP/manifest.xml"
           python - "$RUNNER_TEMP/manifest.xml" <<'PY'
