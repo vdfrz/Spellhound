@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <Id>1f5a70e4-5332-58de-beb4-c358f808e9d0</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Spellhound</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Spellhound for Word" />
+  <Description DefaultValue="Bring-your-own-key contract review, drafting, and document tools inside Word. Runs against your own AI provider; no hosted backend." />
+  <IconUrl DefaultValue="https://spellhound.example/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://spellhound.example/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://spellhound.example/" />
+
+  <AppDomains>
+    <AppDomain>https://spellhound.example</AppDomain>
+    <AppDomain>https://publikhq.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+
+  <Requirements>
+    <Sets DefaultMinVersion="1.6">
+      <Set Name="WordApi" MinVersion="1.6" />
+    </Sets>
+  </Requirements>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://spellhound.example/index.html" />
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="Spellhound.Group">
+                <Label resid="Spellhound.Group.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Control xsi:type="Button" id="Spellhound.OpenPane">
+                  <Label resid="Spellhound.OpenPane.Label" />
+                  <Supertip>
+                    <Title resid="Spellhound.OpenPane.Label" />
+                    <Description resid="Spellhound.OpenPane.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>Spellhound.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+          <ExtensionPoint xsi:type="ContextMenu">
+            <OfficeMenu id="ContextMenuText">
+              <Control xsi:type="Button" id="Spellhound.ContextReview">
+                <Label resid="Spellhound.Context.Label" />
+                <Supertip>
+                  <Title resid="Spellhound.Context.Label" />
+                  <Description resid="Spellhound.OpenPane.Tip" />
+                </Supertip>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Action xsi:type="ShowTaskpane">
+                  <TaskpaneId>Spellhound.Taskpane</TaskpaneId>
+                  <SourceLocation resid="Taskpane.Url" />
+                </Action>
+              </Control>
+            </OfficeMenu>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://spellhound.example/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://spellhound.example/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://spellhound.example/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://spellhound.example/index.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://spellhound.example/" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Spellhound for Word is ready" />
+        <bt:String id="Spellhound.Group.Label" DefaultValue="Spellhound" />
+        <bt:String id="Spellhound.OpenPane.Label" DefaultValue="Open Spellhound" />
+        <bt:String id="Spellhound.Context.Label" DefaultValue="Review with Spellhound" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the pane to review this contract, apply grounded redlines, and draft clauses with your own AI key." />
+        <bt:String id="Spellhound.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and run drafting and document tools." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

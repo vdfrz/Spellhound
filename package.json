@@ -1,0 +1,44 @@
+{
+  "name": "spellhound-word",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Spellhound for Microsoft Word - contract review, playbooks, drafting, and US legal research inside Word.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:community": "vite --mode community",
+    "build": "tsc -b && vite build",
+    "build:community": "tsc -b && vite build --mode community",
+    "preview": "vite preview",
+    "build:matters-preview": "vite build --config server/matters/preview.config.ts",
+    "test:matters": "python3 -m unittest server.matters.test_workspace server.matters.test_memory",
+    "type-check": "tsc --noEmit",
+    "test": "node --test server/*.test.mjs && vitest run",
+    "lint": "eslint .",
+    "sideload": "office-addin-debugging start manifest.dev.xml desktop",
+    "sideload:stop": "office-addin-debugging stop manifest.dev.xml",
+    "validate:manifest": "office-addin-manifest validate dist/manifest.xml",
+    "manifest": "node scripts/manifest.mjs",
+    "start": "node server/start.mjs"
+  },
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "office-word-diff": "github:yuch85/office-word-diff",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.377",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "office-addin-debugging": "^6.0.0",
+    "office-addin-manifest": "^1.13.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vitest": "^3.2.7"
+  }
+}

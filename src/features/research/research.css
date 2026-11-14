@@ -1,0 +1,10 @@
+.research { padding: 4px; }
+.research label { display: grid; gap: 5px; }
+.research input, .research select {
+  width: 100%; padding: 7px; font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--control-border); border-radius: var(--radius-sm);
+}
+.research form > button { align-self: flex-start; }
+.research-card { padding: 12px; overflow-wrap: anywhere; }
+.research-card blockquote { margin: 0; padding-left: 10px; border-left: 2px solid var(--control-border); }
+.research-card .row { flex-wrap: wrap; }

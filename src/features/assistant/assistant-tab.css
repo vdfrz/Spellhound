@@ -1,0 +1,15 @@
+.assistant-tab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.assistant-tab__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.assistant-tab__body--pad {
+  overflow-y: auto;
+  padding: var(--space-l);
+}
