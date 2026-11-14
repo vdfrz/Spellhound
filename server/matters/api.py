@@ -1,6 +1,7 @@
 """Private WSGI interface; deliberately not mounted by server/start.mjs."""
 import json
 from http import HTTPStatus
+from urllib.parse import parse_qs
 from .store import Matters, Problem
 
 PREFIX = '/spellhound/matters'
@@ -47,7 +48,10 @@ def private_api(root, resolve_principal, origin, memory=None):
             mid, action = parts[3:]
             if action == 'entries':
                 if method == 'GET':
-                    return response(start, 200, store.entries(mid))
+                    kinds = parse_qs(env.get('QUERY_STRING', ''), keep_blank_values=True).get('kind')
+                    if kinds and (len(kinds) != 1 or kinds[0] not in ('note', 'reference', 'decision')):
+                        raise Problem(400, 'Unknown item type.')
+                    return response(start, 200, store.entries(mid, kinds[0] if kinds else None))
                 return response(start, 201, store.file(mid, **payload(env, ['kind', 'title', 'body'])))
             if action == 'memory':
                 if method == 'GET':

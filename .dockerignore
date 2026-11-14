@@ -40,3 +40,5 @@ provider.key
 .spellhound/
 .venv/
 __pycache__/
+
+publik-app-token.txt

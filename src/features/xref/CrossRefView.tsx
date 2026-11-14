@@ -4,12 +4,10 @@ import { ViewHeader } from "@/ui/ViewHeader";
 import { RescanButton } from "@/ui/RescanButton";
 import { Badge, Banner, Button, Spinner } from "@/ui/primitives";
 import { LocateIcon } from "@/ui/icons";
-import { readNumberedParagraphs } from "@/office/structure";
-import { insertCommentAnchored } from "@/office/comments";
+import { actOnReference, readNumberedParagraphs } from "@/office/structure";
 import { useAppNav } from "@/app/nav";
-import { analyzeCrossReferences, type CrossRefReport } from "@/lib/cross-references";
+import { analyzeCrossReferences, type BrokenRef, type CrossRefReport } from "@/lib/cross-references";
 import { useDocumentAutoRefresh } from "@/lib/useDocumentAutoRefresh";
-import { useOccurrenceCycler } from "@/lib/useOccurrenceCycler";
 import "./xref.css";
 
 type State =
@@ -69,23 +67,21 @@ export function CrossRefView() {
     });
   }
 
-  // Cross-link: drop a native Word comment on the broken reference.
-  async function commentOnRef(label: string) {
+  const [position, setPosition] = useState<{ ref: BrokenRef; index: number } | null>(null);
+  async function actOnFinding(ref: BrokenRef, comment = false) {
     setNote(null);
-    const r = await insertCommentAnchored(
-      label,
-      "Broken cross-reference: this points to a section or schedule that does not appear to exist.",
-    );
-    if (r === "not_found") setNote(`Could not locate "${label}" to comment on.`);
-    else if (r === "unsupported_region") setNote("Word does not allow a comment in that location.");
+    const previous = position?.ref === ref ? position.index : -1;
+    const index = comment ? Math.max(0, previous) : (previous + 1) % ref.count;
+    try {
+      const found = await actOnReference(ref.occurrences[index], comment
+        ? "Broken cross-reference: this points to a section or schedule that does not appear to exist."
+        : undefined);
+      if (found) setPosition({ ref, index });
+      else setNote("The reference could not be located. Rescan the document.");
+    } catch (e) {
+      setNote(errorMessage(e));
+    }
   }
-
-  // Step through each mention of a broken reference on repeated clicks.
-  const { cycle, labelFor, countFor } = useOccurrenceCycler();
-  const cycleRef = (label: string) => {
-    setNote(null);
-    void cycle(label).catch((e) => setNote(errorMessage(e)));
-  };
 
   const header = (
     <ViewHeader
@@ -147,29 +143,27 @@ export function CrossRefView() {
           {report.sectionCount}), so section references were not checked. This happens with
           unusual or inconsistent numbering.
         </Banner>
-      ) : report.broken.length === 0 ? (
+      ) : null}
+      {report.checkedSections && report.broken.length === 0 && (
         <Banner tone="success">
-          No broken cross-references found. Every reference resolves to an existing section
-          {report.scheduleCount > 0 ? " or schedule" : ""}.
+          No broken internal cross-references found among the references checked.
         </Banner>
-      ) : (
+      )}
+      {report.broken.length > 0 && (
         <div className="stack" style={{ gap: 0 }} data-tour="xref-broken">
           {report.broken.map((b) => (
             <div key={`${b.kind}-${b.label}`} className="xref-row">
               <div className="stack" style={{ gap: 0, minWidth: 0 }}>
                 <span className="xref-label">{b.label}</span>
                 <span className="small muted">
-                  {labelFor(b.label)
-                    ? `Occurrence ${labelFor(b.label)}`
-                    : (() => {
-                        const c = countFor(b.label) ?? b.count;
-                        return `Referenced ${c} ${c === 1 ? "time" : "times"}, not found`;
-                      })()}
+                  {position?.ref === b
+                    ? `Occurrence ${position.index + 1} of ${b.count}`
+                    : `Referenced ${b.count} ${b.count === 1 ? "time" : "times"}, not found`}
                 </span>
                 {b.context && (
                   <span className="ctx-line">
                     {b.context.before}
-                    <mark className="ctx-hit">{b.label}</mark>
+                    <mark className="ctx-hit">{b.occurrences[0].text}</mark>
                     {b.context.after}
                   </span>
                 )}
@@ -178,7 +172,7 @@ export function CrossRefView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => cycleRef(b.label)}
+                  onClick={() => void actOnFinding(b)}
                   aria-label={
                     b.count > 1
                       ? `Find next occurrence of ${b.label}`
@@ -201,7 +195,7 @@ export function CrossRefView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => void commentOnRef(b.label)}
+                  onClick={() => void actOnFinding(b, true)}
                   aria-label={`Comment on ${b.label} in the document`}
                   title="Add a comment in the document"
                 >

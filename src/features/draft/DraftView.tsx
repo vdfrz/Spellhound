@@ -28,7 +28,6 @@ import { JURISDICTIONS, labelOf } from "@/features/review/constants";
 import { getReviewPrefs } from "@/lib/prefs";
 import { SaveToVaquill } from "@/features/integration/SaveToVaquill";
 import { useAppNav } from "@/app/nav";
-import { config } from "@/config";
 import { TransplantView } from "@/features/transplant/TransplantView";
 import { FillView } from "@/features/fill/FillView";
 import { ClauseLibraryView } from "@/features/clauses/ClauseLibraryView";
@@ -179,11 +178,7 @@ export function DraftView() {
     setInserting(true);
     setError(null);
     try {
-      await insertDraftFormatted({
-        title: result.title,
-        sections: result.sections,
-        fullText: result.fullText,
-      });
+      await insertDraftFormatted(result);
       setInserted(true);
     } catch (e) {
       setError(errorMessage(e));
@@ -257,7 +252,7 @@ export function DraftView() {
           )}
         </div>
 
-        {result.sections.length > 0 && (
+        {result.scope !== "passage" && result.sections.length > 0 && (
           <div className="stack" style={{ gap: 2 }}>
             <h3 className="small muted">Sections</h3>
             <ol className="draft-outline small">
@@ -362,17 +357,10 @@ export function DraftView() {
         info="Generates a first-draft agreement from your inputs and inserts it into the document. Treat it as a starting point, not a final draft: review the language, run it through Review, and get the required sign-off before you send it."
       />
         <p className="small muted" style={{ margin: 0 }}>
-          Generate a first-draft agreement and insert it into this document.
+          Draft an agreement or describe the clause or paragraph you want to insert.
         </p>
         <p className="small muted" style={{ margin: 0 }}>
-          <a href={`${config.appBase}/templates`} target="_blank" rel="noreferrer">
-            Browse templates
-          </a>{" "}
-          or{" "}
-          <a href={`${config.appBase}/drafting`} target="_blank" rel="noreferrer">
-            open your saved drafts
-          </a>{" "}
-          in Spellhound.
+          The shared template and draft libraries are not available in this build.
         </p>
       </div>
 
@@ -486,7 +474,7 @@ export function DraftView() {
           <div className="row" style={{ gap: 8, alignItems: "center" }}>
             <Spinner />
             <span className="small muted">
-              {progress?.label || "Drafting your agreement. This can take up to a minute."}
+              {progress?.label || "Drafting your text. This can take up to a minute."}
             </span>
           </div>
 

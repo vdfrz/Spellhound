@@ -12,8 +12,6 @@ import { CitationStyle } from "./CitationStyle";
 import { insertTableOfAuthorities } from "@/office/citations";
 import { canAnnotate, paintCritiques, clearCritiques, type CritiqueItem } from "@/office/annotations";
 import type { AuthorityResult } from "@/api/authority";
-import { citationAuthorityAvailable } from "@/community/gating";
-import { UpgradeGate } from "@/ui/UpgradeGate";
 import "./authority.css";
 
 /** Which summary bucket a citation result falls in (drives the filter chips). */
@@ -123,20 +121,11 @@ export function AuthorityView() {
     return (
       <div className="stack authority-view">
         <ViewHeader
-        title="Authority check"
-        info="Checks every case and statute citation in the document against Spellhound's US corpus. Found means a real matching authority exists, not that it is still good law, so confirm its current treatment before relying on it. No match can mean a hallucinated, mis-typed, or unreported citation, so confirm it yourself before you rely on it or file."
-        subtitle="Verify every case and statute citation in this document against Spellhound's US corpus. Catch citations that do not resolve to a real authority before you file or send."
-      />
-        {citationAuthorityAvailable() ? (
-          <Button variant="primary" className="btn--cta" onClick={run}>
-            Check citations
-          </Button>
-        ) : (
-          <UpgradeGate title="Statute & good-law checks are on the hosted plan">
-            To check whether cited cases exist, add your free CourtListener API token in Settings.
-            Full statute verification and good-law treatment are part of the Spellhound hosted plan.
-          </UpgradeGate>
-        )}
+          title="Authority check"
+          info="Only the extracted citations are sent to Publik. Exact U.S. Reports citations are checked against GovInfo. Open other search results to verify the case."
+          subtitle="Search US case law with Publik. Each unique citation costs $0.01, up to 20 per scan."
+        />
+        <Button variant="primary" className="btn--cta" onClick={run}>Check citations</Button>
       </div>
     );
   }
@@ -170,8 +159,7 @@ export function AuthorityView() {
 
       {state.status === "done" && state.total === 0 && (
         <Banner tone="info">
-          No case or statute citations were found. This looks for US authority cites such as
-          "347 U.S. 483", "18 U.S.C. § 1030", or "Cal. Civ. Code § 1950.5". Contracts and NDAs
+          No supported US case citations were found. This looks for reporter citations such as "347 U.S. 483". Contracts and NDAs
           usually have none, so run it on a brief, memo, or opinion that cites case law.
         </Banner>
       )}

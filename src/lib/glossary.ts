@@ -9,20 +9,7 @@
  * resolve a term without scrolling back to the definitions section.
  */
 
-// A defined term: opens with a capital, no quote chars inside, length-bounded.
-// Straight and curly quotes both allowed. Mirrors lib/defined-terms.ts grammar.
-const Q_OPEN = "[\"“”]";
-const Q_CLOSE = "[\"“”]";
-const TERM = "([A-Z][^\"“”]{0,60})";
-const VERB =
-  "(?:means|shall\\s+mean|shall\\s+have\\s+the\\s+meaning|has\\s+the\\s+meaning|refers?\\s+to|shall\\s+refer\\s+to)";
-
-// "X" means / shall mean / has the meaning / refers to ...
-const VERB_DEF = new RegExp(`${Q_OPEN}${TERM}${Q_CLOSE}(?:\\(s\\))?\\s*${VERB}\\b`, "gi");
-// Parenthetical: ("X"), (the "X"), (each a "X"), (collectively, the "Xs"), ...
-const PAREN_LEADIN =
-  "(?:the\\s+|each\\s+(?:a\\s+)?|an?\\s+|collectively,?\\s+(?:the\\s+)?|individually,?\\s+(?:a\\s+)?|together,?\\s+(?:the\\s+)?|hereinafter,?\\s+(?:referred\\s+to\\s+as\\s+)?(?:the\\s+)?|referred\\s+to\\s+as\\s+(?:the\\s+)?)?";
-const PAREN_DEF = new RegExp(`\\(\\s*${PAREN_LEADIN}${Q_OPEN}${TERM}${Q_CLOSE}`, "g");
+import { termMentions } from "./term-mentions";
 
 const DEFINITION_MAX = 600;
 
@@ -32,14 +19,6 @@ export interface GlossaryEntry {
   definition: string;
   /** Total occurrences of the term in the document. */
   occurrences: number;
-}
-
-function normalizeTerm(raw: string): string {
-  return raw
-    .replace(/\s+/g, " ")
-    .replace(/\(s\)$/i, "")
-    .replace(/[.,;:]+$/, "")
-    .trim();
 }
 
 function escapeRe(s: string): string {
@@ -80,14 +59,8 @@ function countTermOccurrences(text: string, term: string): number {
  */
 export function buildGlossary(text: string): GlossaryEntry[] {
   const seen = new Map<string, string>();
-  for (const re of [VERB_DEF, PAREN_DEF]) {
-    re.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-      const term = normalizeTerm(m[1]);
-      if (term.length < 2 || seen.has(term)) continue;
-      seen.set(term, lineAround(text, m.index));
-    }
+  for (const { term, index, defined } of termMentions(text)) {
+    if (defined && !seen.has(term)) seen.set(term, lineAround(text, index));
   }
   const entries: GlossaryEntry[] = [];
   for (const [term, definition] of seen) {

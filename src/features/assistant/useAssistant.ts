@@ -1,3 +1,4 @@
+import { recallDecisions } from "@/features/matters/recall";
 import { references, targetName } from "./documentContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -190,8 +191,13 @@ export function useAssistant() {
           setState((s) => ({ ...s, streaming: false, thinking: null }));
           return;
         }
+        const dealMemory = grounding?.decisionFolder
+          ? await recallDecisions(grounding.decisionFolder, trimmed, controller.signal)
+          : undefined;
+        if (controller.signal.aborted) return;
         const context = JSON.stringify({
-          activeDocument: { name: targetName(), scope, text: baseContext.slice(0, atts.length ? 230000 : 270000) },
+          dealMemory,
+          activeDocument: { name: targetName(), scope, text: baseContext.slice(0, atts.length || dealMemory ? 210000 : 270000) },
           references: references(atts),
         });
         // PDFs ride the request as provider file attachments (community edition);
@@ -241,7 +247,7 @@ export function useAssistant() {
         patchAssistant((m) => ({ ...m, pending: false }));
         setState((s) => ({ ...s, streaming: false, thinking: null }));
       } catch (e) {
-        if ((e as Error).name === "AbortError") return;
+        if (controller.signal.aborted || (e as Error).name === "AbortError") return;
         // Answer already complete: keep it, just stop the streaming state.
         if (finalized) {
           if (controller.signal.aborted) return;

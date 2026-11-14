@@ -4,8 +4,7 @@
  * Why this exists: the task pane is a cross-origin iframe with no microphone
  * permission, so speech recognition cannot even prompt there. This page runs at
  * our origin in a top-level dialog window where the browser DOES prompt for the
- * mic. It captures speech and streams the transcript back to the pane through
- * `messageParent` (see ./protocol). The pane merges it into the composer.
+ * mic. The dialog previews recognized text and sends it to the composer on Insert.
  */
 import { encodeDictation, type DictationMessage } from "./protocol";
 
@@ -32,6 +31,7 @@ interface Recognition {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  onstart: (() => void) | null;
   onresult: ((e: SpeechEvent) => void) | null;
   onerror: ((e: SpeechErrorEvent) => void) | null;
   onend: (() => void) | null;
@@ -89,21 +89,18 @@ function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
-function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButtonElement } {
+function render() {
   document.getElementById("dictation-root")?.remove();
   document.body.setAttribute(
     "style",
     "margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a;background:#fff;",
   );
   const status = h("div", {
+    role: "status",
     style: "display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;",
   });
-  const dot = h("span", {
-    style:
-      "width:10px;height:10px;border-radius:50%;background:#d92d20;flex:none;animation:vqpulse 1.2s ease-in-out infinite;",
-  });
-  const statusText = h("span", {}, "Listening. Speak now.");
-  status.append(dot, statusText);
+  const statusText = h("span", {}, "Select Start to use the microphone.");
+  status.append(statusText);
 
   const preview = h("div", {
     style:
@@ -120,6 +117,12 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
     },
     "Insert",
   ) as HTMLButtonElement;
+  insert.hidden = true;
+  insert.disabled = true;
+  const start = insert.cloneNode(true) as HTMLButtonElement;
+  start.textContent = "Start dictation";
+  start.hidden = false;
+  start.disabled = false;
   const cancel = h(
     "button",
     {
@@ -130,11 +133,7 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
     "Cancel",
   ) as HTMLButtonElement;
 
-  const style = document.createElement("style");
-  style.textContent = "@keyframes vqpulse{0%,100%{opacity:1}50%{opacity:.25}}";
-  document.head.append(style);
-
-  const row = h("div", { style: "display:flex;gap:8px;margin-top:12px;" }, insert, cancel);
+  const row = h("div", { style: "display:flex;gap:8px;margin-top:12px;" }, start, insert, cancel);
   const root = h(
     "div",
     { style: "display:flex;flex-direction:column;gap:10px;padding:14px 16px;" },
@@ -145,14 +144,21 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
   document.body.append(root);
 
   cancel.onclick = () => post({ type: "cancel" });
-  return { status: statusText, preview, insert };
+  return { status: statusText, preview, start, insert };
 }
 
 function run(): void {
   const ui = render();
+  let waiting: number | undefined;
+  function fail(message: string) {
+    window.clearTimeout(waiting);
+    ui.start.disabled = true;
+    ui.status.textContent = message;
+    post({ type: "error", message });
+  }
   const Ctor = getCtor();
   if (!Ctor) {
-    post({ type: "error", message: "Dictation is not supported in this window." });
+    fail("This Word window does not support speech recognition. Use your device’s keyboard dictation in the message box.");
     return;
   }
 
@@ -165,6 +171,10 @@ function run(): void {
 
   const currentText = (interim: string) => `${finalText}${interim}`.trim();
 
+  rec.onstart = () => {
+    window.clearTimeout(waiting);
+    ui.status.textContent = "Listening. Speak now.";
+  };
   rec.onresult = (e) => {
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -175,11 +185,11 @@ function run(): void {
     const text = currentText(interim);
     ui.preview.textContent = text;
     ui.preview.scrollTop = ui.preview.scrollHeight;
-    post({ type: "transcript", text });
+    ui.insert.disabled = !text;
   };
   rec.onerror = (e) => {
     stopped = true;
-    post({ type: "error", message: messageForError(e?.error) });
+    fail(messageForError(e?.error));
   };
   // The engine ends itself on a pause. While the user is still dictating, keep
   // the session alive by restarting; once they press Insert we let it end.
@@ -188,8 +198,8 @@ function run(): void {
     try {
       rec.start();
     } catch {
-      // Could not resume: finish with whatever we have.
-      post({ type: "done", text: currentText("") });
+      stopped = true;
+      ui.status.textContent = ui.insert.disabled ? "Dictation stopped." : "Dictation stopped. You can insert the text below.";
     }
   };
 
@@ -201,33 +211,26 @@ function run(): void {
     } catch {
       // already stopped
     }
-    post({ type: "done", text: currentText("") });
+    post({ type: "done", text: ui.preview.textContent ?? "" });
   };
 
-  // Prime the mic with an explicit getUserMedia so the browser shows one clean
-  // permission prompt and a denial surfaces a precise message (SpeechRecognition
-  // alone can fail silently). Release the stream immediately; recognition opens
-  // its own capture.
-  const primeAndStart = async () => {
+  // Some Word webviews require a gesture inside the dialog itself. Let
+  // recognition request its own microphone instead of waiting on a separate
+  // capture permission before recognition even starts.
+  ui.start.onclick = () => {
+    ui.start.hidden = true;
+    ui.insert.hidden = false;
+    ui.status.textContent = "Starting the microphone…";
+    waiting = window.setTimeout(() => {
+      ui.status.textContent = "Still waiting for speech recognition. Check microphone permissions for Word, or cancel and use your device’s keyboard dictation in the message box.";
+    }, 10000);
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      }
       rec.start();
-    } catch (err) {
-      const name = (err as { name?: string })?.name;
-      const code =
-        name === "NotAllowedError" || name === "SecurityError"
-          ? "not-allowed"
-          : name === "NotFoundError"
-            ? "audio-capture"
-            : undefined;
+    } catch {
       stopped = true;
-      post({ type: "error", message: messageForError(code) });
+      fail("Dictation could not start. Check microphone permissions for Word.");
     }
   };
-  void primeAndStart();
 }
 
 // Office.js must be ready before messageParent works.
