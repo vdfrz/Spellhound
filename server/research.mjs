@@ -31,19 +31,20 @@ function check(r) {
 
 async function web(query, key, call) {
   if (!key) return result('unconfigured');
-  const r = await call('https://api.parallel.ai/v1/search', {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': key },
-    body: JSON.stringify({ search_queries: [query], mode: 'fast', advanced_settings: { max_results: limit } }),
+  const r = await call('https://publikhq.com/api/v1/search', {
+    method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + key },
+    body: JSON.stringify({ q: query, count: limit }),
   });
   if (r.status === 401 || r.status === 403) return result('key_rejected');
+  if (r.status === 402) return result('no_credit');
   check(r);
   const { results } = await json(r);
   if (!Array.isArray(results)) throw Error();
   const items = [];
   for (const row of results.slice(0, limit)) {
     const url = publicLink(row?.url);
-    const passage = Array.isArray(row?.excerpts) && row.excerpts.map(tidy).find(Boolean);
-    if (url && passage) items.push(record(row.title || new URL(url).hostname, new URL(url).hostname, passage, url));
+    const passage = plain(row?.snippet);
+    if (url && passage) items.push(record(plain(row.title) || new URL(url).hostname, new URL(url).hostname, passage, url));
   }
   return result(items.length ? 'found' : results.length ? 'no_passage' : 'no_match', items);
 }
@@ -134,7 +135,21 @@ async function usReports(query, call, extractPage) {
 export async function research({ source, query }, key, { upstream = fetch, extractPage = firstPage } = {}) {
   const call = (url, opts) => upstream(url, { ...opts, redirect: 'manual', signal: AbortSignal.timeout(10000) });
   try {
-    if (source === 'parallel') return await web(query, key, call);
+    if (source === 'web') return await web(query, key, call);
+    if (source === 'cases') {
+      const leads = await web(query + ' US court opinion case law', key, call);
+      if (!['found', 'no_passage', 'no_match'].includes(leads.status)) return leads;
+      if (/^\d{1,3}\s+U\.?\s*S\.?\s+\d{1,4}$/i.test(query)) {
+        // A search hit can merely mention the case. Only a matching reporter
+        // record and its printed opinion qualifies as a verified citation.
+        const official = await usReports(query, call, extractPage).catch(() => null);
+        if (official?.status === 'found') {
+          return result('found', [...official.items.map(item => ({ ...item, verifiedReporter: true })),
+            ...leads.items.filter(item => item.url !== official.items[0].url)]);
+        }
+      }
+      return leads;
+    }
     if (source === 'uscode') return await usCode(query, call);
     if (source === 'ecfr') return await regulations(query, call);
     if (source === 'usreports') return await usReports(query, call, extractPage);
@@ -144,7 +159,7 @@ export async function research({ source, query }, key, { upstream = fetch, extra
 
 export function researchRoute({ origin, ...deps }) {
   let active = 0;
-  return async (req, res) => {
+  return async (req, res, publikKey) => {
     const send = (code, body = {}) => {
       res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify(body));
@@ -159,11 +174,9 @@ export function researchRoute({ origin, ...deps }) {
       let data;
       try { data = JSON.parse(raw); } catch { return send(400); }
       if (!data || Object.keys(data).sort().join(',') !== 'query,source' ||
-          !['parallel', 'ecfr', 'usreports', 'uscode'].includes(data.source) || typeof data.query !== 'string' ||
+          !['web', 'cases', 'ecfr', 'usreports', 'uscode'].includes(data.source) || typeof data.query !== 'string' ||
           !data.query.trim() || data.query.length > 160 || /[\u0000-\u001f\u007f]/.test(data.query)) return send(400);
-      // Caller-owned key: never use operator credits or forward cookies/other headers.
-      const key = data.source === 'parallel' ? req.headers['x-parallel-key'] : undefined;
-      return send(200, await research({ source: data.source, query: data.query.trim() }, key, deps));
+      return send(200, await research({ source: data.source, query: data.query.trim() }, publikKey, deps));
     } finally { active--; }
   };
 }

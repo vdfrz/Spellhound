@@ -102,7 +102,7 @@ function getCtor(): RecognitionCtor | undefined {
  * Two paths, same interface:
  *  - Inside Office (the real add-in), the task pane iframe has NO microphone
  *    permission, so recognition runs in a top-level Office DIALOG that CAN
- *    prompt for the mic; it streams the transcript back via messageParent.
+ *    prompt for the mic; Insert sends the accepted transcript via messageParent.
  *  - Outside Office (the local `preview.html` dev harness, a normal browser tab
  *    where the mic works inline), it uses the Web Speech API directly.
  *
@@ -182,9 +182,6 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
           const msg = decodeDictation((arg as { message?: string }).message ?? "");
           if (!msg) return;
           switch (msg.type) {
-            case "transcript":
-              cbRef.current(msg.text);
-              break;
             case "done":
               cbRef.current(msg.text);
               closeDialog();

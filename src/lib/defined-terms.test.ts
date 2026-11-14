@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildGlossary } from "@/lib/glossary";
 import { analyzeDefinedTerms } from "@/lib/defined-terms";
 
 // The mock contract in src/preview.tsx, kept here without importing its UI.
@@ -67,5 +68,40 @@ describe("analyzeDefinedTerms", () => {
     expect(analyzeDefinedTerms(text)).toEqual({ definedCount: 1, findings: [] });
     expect(analyzeDefinedTerms("")).toEqual({ definedCount: 0, findings: [] });
     expect(analyzeDefinedTerms(text)).toEqual({ definedCount: 1, findings: [] });
+  });
+});
+
+describe("collective definitions in a preamble", () => {
+  it.each([
+    'East and West are each a "Party" and together the "Parties."',
+    'North and South are collectively the “Parties”.',
+    'North and South are together referred to as the "Parties".',
+    'North and South (each, a “Party” and collectively, the “Parties”) agree.',
+    'North and South (the “Parties”, and each a “Party”) agree.',
+  ])("recognizes the aliases in %s in both document tools", (preamble) => {
+    const text = preamble + " The Parties agree. Each Party may sign.";
+    const expected = preamble.includes("Party") ? ["Parties", "Party"] : ["Parties"];
+    expect(analyzeDefinedTerms(text)).toEqual({ definedCount: expected.length, findings: [] });
+    expect(buildGlossary(text).map((entry) => entry.term)).toEqual(expected);
+  });
+
+  it("distinguishes a blank exhibit party field from a competing definition", () => {
+    const body = 'Arbor Ltd. (the “Builder”) must deliver the work. The Builder signs below.\r';
+    const exhibit = body + "EXHIBIT B\rWork order\r";
+    const roles = analyzeDefinedTerms(exhibit + 'Signed by ________ (the “Builder”) for this order.');
+    expect(roles).toEqual({ definedCount: 1, findings: [] });
+    for (const repeated of ['Oak Ltd. (the “Builder”) signs.', '“Builder” means the supervisor.']) {
+      expect(analyzeDefinedTerms(exhibit + repeated).findings)
+        .toMatchObject([{ term: "Builder", kind: "duplicate", definitionCount: 2 }]);
+    }
+  });
+
+  it("keeps genuine undefined terms, duplicate definitions and ordinary quotations distinct", () => {
+    const text = 'North and South, collectively the “Parties”, sign. The Parties consent.\n' +
+      'The “Deadline” may change. The Deadline is tomorrow.\n' +
+      '“Window” means one day. “Window” means two days. Both collectively reject “Delay”.';
+    expect(analyzeDefinedTerms(text).findings.map(({ kind, term }) => [kind, term])).toEqual([
+      ["undefined", "Deadline"], ["duplicate", "Window"],
+    ]);
   });
 });

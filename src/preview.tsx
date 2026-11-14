@@ -296,7 +296,6 @@ function AssistantPreview() {
             onSend={() => {}}
             disabled={false}
             mode="ask"
-            onMode={() => {}}
             scope={scope}
             onScope={setScope}
             context={{ web: false, matterDocs: true, corpus: true }}

@@ -22,7 +22,6 @@ import {
 import { JURISDICTIONS } from "@/features/review/constants";
 import { isCommunity } from "@/community/edition";
 import { AiProvidersCard } from "./AiProvidersCard";
-import { CourtListenerCard } from "./CourtListenerCard";
 import "./settings.css";
 
 
@@ -213,7 +212,6 @@ export function SettingsView({
 
       {isCommunity() && <AiProvidersCard />}
 
-      {isCommunity() && <CourtListenerCard />}
 
       {hosted && <div className="card settings-card"><UsageChoice /></div>}
 
@@ -225,7 +223,7 @@ export function SettingsView({
       )}
 
       <div className="card settings-card">
-        <h2 className="settings-heading">Workspace defaults</h2>
+        <h2 className="settings-heading">Review defaults</h2>
         <p className="small muted settings-heading__hint">
           {isCommunity()
             ? "Set your default jurisdiction once. New reviews and the assistant use it automatically, so you never re-pick it."

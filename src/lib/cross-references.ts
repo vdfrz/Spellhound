@@ -24,7 +24,15 @@ import { snippetAround, type ContextSnippet } from "./context-snippet";
 
 export type XrefKind = "section" | "schedule";
 
+export interface ReferenceOccurrence {
+  paragraphIndex: number;
+  paragraphText: string;
+  text: string;
+  offset: number;
+}
+
 export interface BrokenRef {
+  occurrences: ReferenceOccurrence[];
   kind: XrefKind;
   /** Display label, e.g. "Section 7.4" or "Exhibit C". */
   label: string;
@@ -74,6 +82,31 @@ function isStatutoryCitation(text: string, matchStart: number, matchEnd: number)
   return ET_SEQ_AFTER.test(after) || OF_STATUTE_AFTER.test(after);
 }
 
+// Only a qualified instrument is unambiguously external. "The Agreement"
+// and "this Amendment" often mean the current document and remain checkable.
+const OTHER_INSTRUMENT = /\b(?:original|prior|underlying|previous|separate|existing)\s+(?:agreement|contract|lease|instrument)\b/.source;
+const EXTERNAL_BEFORE = new RegExp(OTHER_INSTRUMENT + String.raw`(?:['’]s|,|:)?\s*\(?\s*$`, "i");
+// Optional subsection or descriptive caption, then any additional numbers
+// sharing the qualifier: "Sections 6(a) and 7 of the Original Agreement".
+const SUBSECTION_OR_CAPTION = /(?:\s*\([^()\r\n]{1,80}\))*/.source;
+const MORE_NUMBERS = /(?:(?:,\s*(?:and\s+|or\s+)?|\s+(?:and|or|through|to)\s+|\s*[–-]\s*)(?:sections?\s+)?\d+(?:\.\d+)*(?:\(\w+\))*)*/.source;
+const EXTERNAL_AFTER = new RegExp("^" + SUBSECTION_OR_CAPTION + MORE_NUMBERS +
+  String.raw`\s+(?:of|under|to|in)\s+(?:the\s+)?` + OTHER_INSTRUMENT, "i");
+
+export function isExternalReference(text: string, match: RegExpExecArray): boolean {
+  const end = match.index + match[0].length;
+  const before = text.slice(Math.max(0, match.index - 100), match.index);
+  const after = text.slice(end, end + 180);
+  if (/^\s+(?:of|under|to|in)\s+(?:this\s+|the\s+(?:agreement|amendment)\b)/i.test(after)) return false;
+  return EXTERNAL_AFTER.test(after) || EXTERNAL_BEFORE.test(before) || isStatutoryCitation(text, match.index, end);
+}
+
+// "Section 9 of this Amendment applies" is prose, even at the start of a
+// paragraph. Registering it as a heading would make its own target appear to exist.
+export function isSectionHeading(text: string, match: RegExpExecArray): boolean {
+  return !isExternalReference(text, match) && !/^\s+(?:of|applies|requires|provides|is|shall|will)\b/i.test(text.slice(match[0].length));
+}
+
 const SCHEDULE_TYPES = ["Schedule", "Exhibit", "Appendix", "Annex"] as const;
 
 // A schedule/exhibit label id is a single uppercase letter, a Roman numeral, or
@@ -101,7 +134,7 @@ function collectSections(paragraphs: { text: string; listString: string | null }
     if (!text) continue;
     // "Section 7.4" / "Article 4" / "Clause 7.4" heading.
     let m = /^(?:Section|Article|Clause)\s+(\d+(?:\.\d+)*)\b/i.exec(text);
-    if (m) sections.add(m[1]);
+    if (m && isSectionHeading(text, m)) sections.add(m[1]);
     // Dotted multi-level heading typed at the start ("7.4 Indemnification").
     m = /^(\d+(?:\.\d+)+)\s+\S/.exec(text);
     if (m) sections.add(m[1]);
@@ -118,7 +151,7 @@ function collectSchedules(paragraphs: { text: string }[]): Set<string> {
   const re = new RegExp(`^(${SCHEDULE_TYPES.join("|")})\\s+([A-Za-z0-9]{1,4})\\b`, "i");
   for (const p of paragraphs) {
     const m = re.exec(p.text);
-    if (m && SCHEDULE_ID.test(m[2])) set.add(`${m[1].toUpperCase()}:${m[2].toUpperCase()}`);
+    if (m && SCHEDULE_ID.test(m[2]) && !isExternalReference(p.text, m)) set.add(`${m[1].toUpperCase()}:${m[2].toUpperCase()}`);
   }
   return set;
 }
@@ -137,58 +170,45 @@ export function analyzeCrossReferences(
 ): CrossRefReport {
   const sections = collectSections(paragraphs);
   const schedules = collectSchedules(paragraphs);
-  const fullText = paragraphs.map((p) => p.text).join("\n");
 
   const checkedSections = sections.size >= MIN_SECTIONS;
   const checkedSchedules = schedules.size >= 1;
-
-  // Missing target -> {label, count}. Keyed to dedupe repeated references.
   const missing = new Map<string, BrokenRef>();
-  const bump = (key: string, kind: XrefKind, label: string, context?: ContextSnippet) => {
-    const prev = missing.get(key);
-    if (prev) prev.count += 1;
-    else missing.set(key, { kind, label, count: 1, context });
+
+  const record = (kind: XrefKind, label: string, match: RegExpExecArray, paragraphIndex: number) => {
+    const paragraphText = paragraphs[paragraphIndex].text;
+    const occurrence = { paragraphIndex, paragraphText, text: match[0], offset: match.index };
+    const previous = missing.get(label);
+    if (previous) {
+      previous.count++;
+      previous.occurrences.push(occurrence);
+    } else {
+      missing.set(label, {
+        kind, label, count: 1, occurrences: [occurrence],
+        context: snippetAround(paragraphText, match.index, match.index + match[0].length),
+      });
+    }
   };
 
-  // Section references: "Section 7.4" / "Clause 7.4" / "Paragraph 7.4" / "§ 7.4".
-  if (checkedSections) {
-    const secRe = /(?:\b(?:Sections?|Clauses?|Paragraphs?)\b|§)\s*(\d+(?:\.\d+)*)/gi;
-    let m: RegExpExecArray | null;
-    while ((m = secRe.exec(fullText)) !== null) {
-      const id = m[1];
-      // A statutory citation ("6 Del. C. § 2001", "§ 1030 et seq.") is an
-      // external code section, not an internal reference: never flag it.
-      if (isStatutoryCitation(fullText, m.index, m.index + m[0].length)) continue;
-      if (!hasSection(sections, id))
-        bump(
-          `section:${id}`,
-          "section",
-          `Section ${id}`,
-          snippetAround(fullText, m.index, m.index + m[0].length),
-        );
-    }
-  }
-
-  // Schedule/exhibit references: "Schedule A" / "Exhibit C" / "Appendix 1".
-  if (checkedSchedules) {
-    const schRe = new RegExp(`\\b(${SCHEDULE_TYPES.join("|")})\\s+([A-Za-z0-9]{1,4})\\b`, "gi");
-    let m: RegExpExecArray | null;
-    while ((m = schRe.exec(fullText)) !== null) {
-      const type = m[1];
-      const id = m[2];
-      if (!SCHEDULE_ID.test(id)) continue;
-      const key = `${type.toUpperCase()}:${id.toUpperCase()}`;
-      if (!schedules.has(key)) {
-        const label = `${type.charAt(0).toUpperCase()}${type.slice(1).toLowerCase()} ${id.toUpperCase()}`;
-        bump(
-          `schedule:${key}`,
-          "schedule",
-          label,
-          snippetAround(fullText, m.index, m.index + m[0].length),
-        );
+  const secRe = /(?:\b(?:Sections?|Clauses?|Paragraphs?)\b|§)\s*(\d+(?:\.\d+)*)/gi;
+  const schRe = new RegExp(`\\b(${SCHEDULE_TYPES.join("|")})\\s+([A-Za-z0-9]{1,4})\\b`, "gi");
+  paragraphs.forEach(({ text }, index) => {
+    if (checkedSections) {
+      for (const m of text.matchAll(secRe)) {
+        if (!hasSection(sections, m[1]) && !isExternalReference(text, m)) {
+          record("section", `Section ${m[1]}`, m, index);
+        }
       }
     }
-  }
+    if (checkedSchedules) {
+      for (const m of text.matchAll(schRe)) {
+        const [, type, id] = m;
+        if (!SCHEDULE_ID.test(id) || schedules.has(`${type.toUpperCase()}:${id}`) || isExternalReference(text, m)) continue;
+        const label = `${type.charAt(0).toUpperCase()}${type.slice(1).toLowerCase()} ${id}`;
+        record("schedule", label, m, index);
+      }
+    }
+  });
 
   const broken = [...missing.values()]
     .sort((a, b) => b.count - a.count)

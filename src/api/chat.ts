@@ -43,6 +43,7 @@ export interface AssistantHandlers {
 
 /** Optional grounding/scoping for a chat request. */
 export interface AssistantGrounding {
+  decisionFolder?: import("@/features/matters/api").Matter | null;
   /** Ground answers in a matter's workspace. */
   matterId?: string | null;
   /** Search the matter's uploaded documents (only meaningful with matterId). */

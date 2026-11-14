@@ -57,7 +57,7 @@ export function useAuthorityScan() {
     // failure (or an abort) leaves results exactly as they were.
     const runTreatmentPass = async (base: AuthorityResult[]): Promise<void> => {
       const cases = base.filter((r) => r.verdict === "verified" && r.kind !== "statute");
-      if (cases.length === 0 || signal.aborted) return;
+      if (isCommunity() || cases.length === 0 || signal.aborted) return;
       setState((prev) => ({ ...prev, checkingTreatment: true }));
       try {
         const statuses = await getCaseStatusBatch(
@@ -106,12 +106,12 @@ export function useAuthorityScan() {
           acc.push(c.context ? { ...verified, context: c.context } : verified);
         } catch (e) {
           if ((e as Error).name === "AbortError") return;
-          if (e instanceof ApiError && e.kind === "rate_limited") {
+          if (e instanceof ApiError) {
             setState({
               status: "done",
               results: [...acc],
               total: cites.length,
-              error: "Rate limit reached. Some citations were not checked. Try again shortly.",
+              error: e.message + " Remaining citations were not checked.",
               checkingTreatment: false,
             });
             await runTreatmentPass(acc);

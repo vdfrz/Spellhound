@@ -63,7 +63,7 @@ export function App({ privateMattersAvailable = false }: { privateMattersAvailab
 
 function AppShell({ privateMattersAvailable }: { privateMattersAvailable: boolean }) {
   const { tab, setTab, reviewSub, setReviewSub, intent, navigate, clearIntent } = useAppNav();
-  const { startIfUnseen, start } = useTour();
+  const { start } = useTour();
   const [user, setUser] = useState<User | null>(null);
   // Bumped whenever the active organization changes, to remount the data views
   // (matters/drafts/playbooks/clients) so they refetch under the new org.
@@ -75,12 +75,6 @@ function AppShell({ privateMattersAvailable }: { privateMattersAvailable: boolea
   useEffect(() => subscribeActiveOrg(() => setOrgVersion((v) => v + 1)), []);
 
   const authed = !!user;
-
-  // First run: once the user is confirmed, start the welcome walkthrough unless
-  // they have already completed (or skipped) it. It drives the tabs itself.
-  useEffect(() => {
-    if (authed) startIfUnseen(WELCOME_TOUR_ID);
-  }, [authed, startIfUnseen]);
 
   // A "Run this playbook" handoff resolves to the Review form's pending state.
   const pendingPlaybook =

@@ -2,6 +2,7 @@ import io
 import json
 import tempfile
 import unittest
+from urllib.parse import urlsplit
 from pathlib import Path
 from .api import PREFIX, private_api
 from .store import Principal
@@ -21,7 +22,8 @@ class WorkspaceTest(unittest.TestCase):
 
     def call(self, path='', data=None, cookie='session-one', origin='https://fixture.invalid', status=200):
         raw = json.dumps(data).encode() if data is not None else b''
-        env = {'PATH_INFO': PREFIX + path, 'REQUEST_METHOD': 'POST' if raw else 'GET', 'HTTP_COOKIE': cookie,
+        route = urlsplit(PREFIX + path)
+        env = {'PATH_INFO': route.path, 'QUERY_STRING': route.query, 'REQUEST_METHOD': 'POST' if raw else 'GET', 'HTTP_COOKIE': cookie,
                'HTTP_ORIGIN': origin, 'CONTENT_TYPE': 'application/json', 'CONTENT_LENGTH': str(len(raw)),
                'wsgi.input': io.BytesIO(raw), 'HTTP_X_USER_ID': 'synthetic:alice'}
         meta = []
@@ -35,6 +37,8 @@ class WorkspaceTest(unittest.TestCase):
         for kind in ('note', 'reference', 'decision'):
             entry = self.call(f'/{a}/entries', {'kind': kind, 'title': kind, 'body': 'Only in A'}, status=201)
         self.assertEqual(len(self.call(f'/{a}/entries', cookie='other-device')), 3)
+        self.assertEqual([item['kind'] for item in self.call(f'/{a}/entries?kind=decision')], ['decision'])
+        self.call(f'/{a}/entries?kind=decision', cookie='session-two', status=404)
         self.assertEqual(self.call(f'/{b}/entries'), [])
         self.assertEqual(self.call(cookie='session-two'), [])
         self.call(cookie='not-authenticated', status=401)
