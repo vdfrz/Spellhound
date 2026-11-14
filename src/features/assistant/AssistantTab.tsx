@@ -13,7 +13,7 @@ export function AssistantTab({ intent, onIntentDone, privateMattersAvailable = f
   privateMattersAvailable?: boolean;
 } = {}) {
   const [showMatters, setShowMatters] = useState(false);
-  const assistant = <AssistantView intent={intent} onIntentDone={onIntentDone} />;
+  const assistant = <AssistantView privateMattersAvailable={privateMattersAvailable} intent={intent} onIntentDone={onIntentDone} />;
   if (!privateMattersAvailable) return assistant;
   return <div className="assistant-tab">
     <div className="assistant-tab__toggle"><button className="btn btn--sm" onClick={() => setShowMatters(x => !x)}>

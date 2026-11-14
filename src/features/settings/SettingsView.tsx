@@ -19,7 +19,6 @@ import {
 } from "@/lib/prefs";
 import { JURISDICTIONS } from "@/features/review/constants";
 import { isCommunity } from "@/community/edition";
-import { UpgradeLink } from "@/ui/UpgradeGate";
 import { AiProvidersCard } from "./AiProvidersCard";
 import { CourtListenerCard } from "./CourtListenerCard";
 import "./settings.css";
@@ -234,13 +233,7 @@ export function SettingsView({
             : "Set your matter and jurisdiction once. New reviews and the assistant use them automatically, so you never re-pick them."}
         </p>
         <div className="form-grid">
-          {/* Matters live in the hosted account; in BYOK show a lock, keep the
-              local jurisdiction default. */}
-          {isCommunity() ? (
-            <Field label="Default matter">
-              <UpgradeLink label="Matters (hosted)" />
-            </Field>
-          ) : (
+          {!isCommunity() && (
             <MatterPicker
               value={prefs.matterId}
               onChange={(id) => setReviewPrefs({ matterId: id })}

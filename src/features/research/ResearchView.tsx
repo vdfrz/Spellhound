@@ -19,7 +19,7 @@ const messages: Record<Exclude<ResearchStatus, "found">, string> = {
   unavailable: "Couldn’t read this source. Try again later or choose another source.",
 };
 
-function SourceCard({ item, source }: { item: SourceItem; source: Source }) {
+function SourceCard({ item, source, onAttach }: { item: SourceItem; source: Source; onAttach?: (item: SourceItem) => void }) {
   const [notice, setNotice] = useState("");
   const label = source === "parallel" ? "Web lead" : "Primary source";
   const reference = [item.title, item.citation, names[source], item.url, "Treatment unknown"].join(" · ");
@@ -35,14 +35,14 @@ function SourceCard({ item, source }: { item: SourceItem; source: Source }) {
     <a href={item.url} target="_blank" rel="noreferrer">{item.title}</a>
     <strong className="small">{item.citation}</strong>
     <blockquote>{item.passage}</blockquote>
-    <div className="row"><Button size="sm" onClick={() => void cite(false)}>Copy citation</Button>
+    <div className="row">{onAttach && <Button size="sm" onClick={() => onAttach(item)}>Attach to chat</Button>}<Button size="sm" onClick={() => void cite(false)}>Copy citation</Button>
       {source !== "parallel" && <Button size="sm" onClick={() => void cite(true)}>Insert footnote</Button>}</div>
     {notice && <span role="status" className="small">{notice}</span>}
   </article>;
 }
 
-export function ResearchView() {
-  const [source, setSource] = useState<Source>("ecfr");
+export function ResearchView({ initialSource = "ecfr", onAttach }: { initialSource?: Source; onAttach?: (item: SourceItem) => void } = {}) {
+  const [source, setSource] = useState<Source>(initialSource);
   const [query, setQuery] = useState("");
   const [key, setKey] = useState("");
   const [pending, setPending] = useState(false);
@@ -77,7 +77,7 @@ export function ResearchView() {
     <div aria-live="polite" className="stack">
       {result?.status === "found" ? <>
         <p className="small muted">{source === "parallel" ? "Web excerpts are leads. Verify legal claims in a primary source." : source === "usreports" ? "Excerpt from the first printed page; it may include the syllabus. Later case treatment has not been checked." : source === "uscode" ? "Opening statutory passage from the cited edition. Check amendments since that edition." : "Search excerpts from the dated eCFR text. Check the applicable date and later amendments."}</p>
-        {result.items.map((item, i) => <SourceCard key={i + item.url} source={source} item={item} />)}
+        {result.items.map((item, i) => <SourceCard onAttach={onAttach} key={i + item.url} source={source} item={item} />)}
       </> : result && <p>{messages[result.status]}</p>}
     </div>
   </div>;

@@ -59,6 +59,7 @@ function ArrowUpGlyph() {
 export type ComposerMode = "ask" | "edit";
 
 interface ComposerProps {
+  privateMattersAvailable?: boolean;
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
@@ -98,6 +99,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     onScope,
     context,
     onContextChange,
+    privateMattersAvailable = false,
     hasMatter,
     attachments,
     onAttach,
@@ -166,6 +168,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       )}
       {contextOpen && (
         <ContextMenu
+          privateMattersAvailable={privateMattersAvailable}
           config={context}
           onChange={onContextChange}
           hasMatter={hasMatter}

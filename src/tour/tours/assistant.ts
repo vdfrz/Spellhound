@@ -12,7 +12,7 @@ export const assistantTour: TourDef = {
       target: sel(ANCHOR.composer),
       placement: "top",
       title: "Ask about the open contract",
-      body: "Type a question here. Answers are grounded in your document and US law, with checkable sources.",
+      body: "Type a question here. Use Add context to include a file or a legal source.",
     },
     {
       nav: { tab: "assistant" },
