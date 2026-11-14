@@ -54,19 +54,19 @@ const TABS: { id: AppTab; label: string; icon: (p: { size?: number }) => ReactNo
   { id: "tools", label: "Tools", icon: ToolsIcon },
 ];
 
-export function App() {
+export function App({ privateMattersAvailable = false }: { privateMattersAvailable?: boolean } = {}) {
   return (
     <ReviewProvider>
       <AppNavProvider>
         <TourProvider>
-          <AppShell />
+          <AppShell privateMattersAvailable={privateMattersAvailable} />
         </TourProvider>
       </AppNavProvider>
     </ReviewProvider>
   );
 }
 
-function AppShell() {
+function AppShell({ privateMattersAvailable }: { privateMattersAvailable: boolean }) {
   const { tab, setTab, reviewSub, setReviewSub, intent, navigate, clearIntent } = useAppNav();
   const { startIfUnseen, start } = useTour();
   const [user, setUser] = useState<User | null>(null);
@@ -279,7 +279,7 @@ function AppShell() {
       >
         {authed && (
           <div hidden={tab !== "assistant" || showSettings} style={{height: "100%"}}>
-            <AssistantTab intent={tab === "assistant" && !showSettings ? intent : null} onIntentDone={clearIntent} />
+            <AssistantTab privateMattersAvailable={privateMattersAvailable} intent={tab === "assistant" && !showSettings ? intent : null} onIntentDone={clearIntent} />
           </div>
         )}
         {!authed ? (

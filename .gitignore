@@ -37,3 +37,7 @@ provider.key
 *.crt
 *.pem
 .spellhound/
+
+# Private workspace development
+.venv/
+__pycache__/

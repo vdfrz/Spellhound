@@ -15,3 +15,5 @@ The server provisions a separate Publik installation credential for each browser
 ## Release status
 
 The local document tools, Ask/Edit changes, branded manifests, and initial Publik gate are under development. Formerly hosted functions such as matters, approvals and research require independent Spellhound services before release. The project is not currently available from the Word store. See [Publik publishing](https://publikhq.com/skills/publish.md) and [Publik sign-in](https://publikhq.com/skills/api.md).
+
+A [private matter workspace preview](server/matters/README.md) is available locally with synthetic users and records. It is not mounted by the hosted service.

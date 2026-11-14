@@ -38,3 +38,5 @@ provider.key
 *.crt
 *.pem
 .spellhound/
+.venv/
+__pycache__/
