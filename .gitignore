@@ -38,4 +38,7 @@ provider.key
 *.pem
 .spellhound/
 
+# Private workspace development
+.venv/
+__pycache__/
 publik-app-token.txt

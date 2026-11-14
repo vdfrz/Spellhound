@@ -13,6 +13,8 @@
     "build": "tsc -b && vite build",
     "build:community": "tsc -b && vite build --mode community",
     "preview": "vite preview",
+    "build:matters-preview": "vite build --config server/matters/preview.config.ts",
+    "test:matters": "python3 -m unittest server.matters.test_workspace server.matters.test_memory",
     "type-check": "tsc --noEmit",
     "test": "node --test server/*.test.mjs && vitest run",
     "lint": "eslint .",

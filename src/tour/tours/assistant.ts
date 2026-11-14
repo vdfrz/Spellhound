@@ -12,7 +12,7 @@ export const assistantTour: TourDef = {
       target: sel(ANCHOR.composer),
       placement: "top",
       title: "Ask about the open contract",
-      body: "Type a question here. Answers are grounded in your document and US law, with checkable sources.",
+      body: "Type a question here. Use Add context to include a file or a legal source.",
     },
     {
       nav: { tab: "assistant" },
@@ -26,7 +26,7 @@ export const assistantTour: TourDef = {
       target: sel(ANCHOR.addContext),
       placement: "top",
       title: "Add context",
-      body: "Ground the answer in US case law, your matter's documents, or the web, and attach a PDF or Word file for this question.",
+      body: "Attach a file or look up a source to use in your next question.",
     },
     {
       nav: { tab: "assistant" },

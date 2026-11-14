@@ -38,5 +38,7 @@ provider.key
 *.crt
 *.pem
 .spellhound/
+.venv/
+__pycache__/
 
 publik-app-token.txt

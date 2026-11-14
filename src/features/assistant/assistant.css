@@ -5,6 +5,10 @@
   flex-direction: column;
 }
 
+.assistant__modes { padding: 10px 12px 2px; }
+.assistant__modes .seg { display: flex; width: 100%; }
+.assistant__modes .seg__btn { flex: 1; min-height: 36px; font-size: var(--fs-body); }
+
 /* Top bar: History / New chat. */
 .assistant__bar {
   display: flex;
@@ -807,12 +811,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* The Ask/Edit pill lives in the actions row; the shared .seg self-aligns to
-   flex-start, so re-center it against the 30px send/icon buttons. */
-.composer__actions .seg {
-  align-self: center;
 }
 
 /* Answer headings (## etc.) rendered at modest sizes for a narrow pane, never a

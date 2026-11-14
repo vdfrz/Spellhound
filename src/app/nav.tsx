@@ -17,6 +17,7 @@ export type AppTab = "review" | "draft" | "assistant" | "tools";
 export type ReviewSub = "redlines" | "changes" | "compare" | "citations" | "playbooks";
 export type SelectionToolKey = "rewrite" | "explain" | "plain" | "risk" | "compliance";
 export type ToolKey =
+  | "research"
   | "cleancopy"
   | "terms"
   | "xref"

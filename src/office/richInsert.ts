@@ -8,64 +8,46 @@ import { runWord, serializeTrackChanges } from "./run";
 import { sampleInsertionFont, matchInsertedFont } from "./font";
 import { inheritListNumbering } from "./lists";
 
-/** Escape the five HTML-significant characters so text content is never markup. */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 interface DraftSection {
   title: string;
 }
 
 interface Draft {
+  scope?: "passage";
   title: string;
   sections: DraftSection[];
   fullText: string;
 }
 
-/** Render one blank-line-delimited block as an <h2> section title or a <p>. */
-function renderParagraph(paragraph: string, sectionTitles: Set<string>): string {
-  const trimmed = paragraph.trim();
-  if (!trimmed) return "";
-  const escaped = escapeHtml(trimmed);
-  if (sectionTitles.has(trimmed.toLowerCase())) {
-    return `<h2>${escaped}</h2>`;
-  }
-  return `<p>${escaped}</p>`;
-}
-
-/** Build the full HTML string for a draft: title heading plus body paragraphs. */
-function buildDraftHtml(draft: Draft): string {
-  const sectionTitles = new Set(draft.sections.map((s) => s.title.trim().toLowerCase()));
-  const body = draft.fullText
-    .split(/\n\s*\n/)
-    .map((paragraph) => renderParagraph(paragraph, sectionTitles))
-    .filter((html) => html.length > 0)
-    .join("");
-  return `<h1>${escapeHtml(draft.title)}</h1>${body}`;
-}
-
-/**
- * Insert a generated draft as formatted HTML after the current selection, so it
- * never overwrites whatever the user has selected, then select the inserted
- * range.
- */
+/** Insert complete Word paragraphs so a draft cannot become part of an existing heading. */
 export async function insertDraftFormatted(draft: Draft): Promise<void> {
-  const html = buildDraftHtml(draft);
+  const blocks = clauseBlocks(draft.fullText).filter(Boolean);
+  const hasTitle = draft.scope !== "passage" && Boolean(draft.title.trim());
+  if (hasTitle) blocks.unshift(draft.title.trim());
+  if (!blocks.length) return;
+
+  const sectionTitles = new Set(draft.sections.map((section) => section.title.trim().toLowerCase()));
   return runWord(async (context) => {
-    // Sample the surrounding font BEFORE inserting so the HTML (which otherwise
-    // lands in the Calibri default) adopts the document's family + size.
     const font = await sampleInsertionFont(context);
-    const selection = context.document.getSelection();
-    const inserted = selection.insertHtml(html, Word.InsertLocation.after);
-    inserted.select();
+    let anchor = await resolveAfterAnchor(context);
+    let first: Word.Paragraph | undefined;
+    let last: Word.Paragraph | undefined;
+    for (const [index, block] of blocks.entries()) {
+      const paragraph: Word.Paragraph = anchor.insertParagraph(block, Word.InsertLocation.after);
+      let style = Word.BuiltInStyleName.normal;
+      if (hasTitle && index === 0) style = Word.BuiltInStyleName.heading1;
+      else if (sectionTitles.has(block.toLowerCase())) style = Word.BuiltInStyleName.heading2;
+      paragraph.styleBuiltIn = style;
+      if (font.name) paragraph.font.name = font.name;
+      if (font.size && style === Word.BuiltInStyleName.normal) paragraph.font.size = font.size;
+      first ??= paragraph;
+      last = paragraph;
+      anchor = paragraph;
+    }
+    if (first && last) {
+      first.getRange(Word.RangeLocation.content).expandTo(last.getRange(Word.RangeLocation.content)).select();
+    }
     await context.sync();
-    await matchInsertedFont(context, inserted, font);
   });
 }
 

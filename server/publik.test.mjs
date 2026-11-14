@@ -23,6 +23,11 @@ async function pilot(t, token = 'pat_fixture') {
     const n = Number(opts.headers.Authorization.split('_').at(-1));
     if (url.endsWith('/wallet')) return wallets[n-1].revoked ? new Response(null,{status:401}) : Response.json(wallets[n-1]);
     if (url.endsWith('/telemetry')) { events.push({n,data:JSON.parse(opts.body)}); return new Response(null,{status:204}); }
+    if (url.endsWith('/search')) {
+      billed.push(n);
+      assert.deepEqual(JSON.parse(opts.body), {q:'privacy training', count:5});
+      return Response.json({results:[]});
+    }
     assert.ok(url.endsWith('/chat/completions'));
     billed.push(n); return Response.json({choices:[]});
   }});
@@ -91,4 +96,20 @@ test('server expiry applies even with cookie; sweep removes dormant and unknown-
   p.clock.now+=lifetime+1;
   assert.equal((await p.post('status',a)).status,401);
   await p.store.sweep(); assert.deepEqual(await readdir(p.directory),[]);
+});
+
+
+test('search uses only the claimed installation that selected Publik', async t => {
+  const p = await pilot(t);
+  const a = await p.start(), b = await p.start();
+  const search = install => p.post('search',install,{'content-type':'application/json'},{source:'web',query:'privacy training'});
+  assert.equal((await search(b)).status,403);
+  p.wallets[0].claim_state='claimed';
+  await p.post('choose/own_key',a);
+  assert.equal((await search(a)).status,403);
+  p.wallets[0].balance_micros=50000;
+  await p.post('choose/publik',a);
+  assert.equal((await search({...a,id:b.id})).status,409);
+  assert.deepEqual(await (await search(a)).json(),{status:'no_match',items:[]});
+  assert.deepEqual(p.billed,[1]);
 });

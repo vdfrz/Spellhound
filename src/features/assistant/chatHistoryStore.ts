@@ -19,7 +19,8 @@ export interface Conversation {
   updatedAt: number;
 }
 
-const KEY = "vaquill.chatHistory";
+// Older transcripts have no document identity. Keep them intact and never guess their owner.
+const key = (scope: string) => storageName("assistant.chats." + scope);
 const MAX = 30; // keep the most recent; older conversations are trimmed.
 // Cap each stored message body so a few long transcripts can't blow the ~5MB
 // localStorage quota (which would silently stop history persisting).
@@ -34,9 +35,9 @@ function capMessages(list: Conversation[]): Conversation[] {
   }));
 }
 
-function read(): Conversation[] {
+function read(scope: string): Conversation[] {
   try {
-    const raw = localStorage.getItem(storageName(KEY));
+    const raw = localStorage.getItem(key(scope));
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as Conversation[]) : [];
@@ -45,31 +46,31 @@ function read(): Conversation[] {
   }
 }
 
-function write(list: Conversation[]): void {
+function write(scope: string, list: Conversation[]): void {
   try {
-    localStorage.setItem(storageName(KEY), JSON.stringify(capMessages(list)));
+    localStorage.setItem(key(scope), JSON.stringify(capMessages(list)));
   } catch {
     // localStorage unavailable (private mode / policy): history just won't persist.
   }
 }
 
 /** Most-recent-first. */
-export function listConversations(): Conversation[] {
-  return read().sort((a, b) => b.updatedAt - a.updatedAt);
+export function listConversations(scope: string): Conversation[] {
+  return read(scope).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-export function getConversation(id: string): Conversation | null {
-  return read().find((c) => c.id === id) ?? null;
+export function getConversation(scope: string, id: string): Conversation | null {
+  return read(scope).find((c) => c.id === id) ?? null;
 }
 
 /** Upsert a conversation (moves it to the top by updatedAt). */
-export function saveConversation(conv: Conversation): void {
-  const rest = read().filter((c) => c.id !== conv.id);
-  write([conv, ...rest].sort((a, b) => b.updatedAt - a.updatedAt));
+export function saveConversation(scope: string, conv: Conversation): void {
+  const rest = read(scope).filter((c) => c.id !== conv.id);
+  write(scope, [conv, ...rest].sort((a, b) => b.updatedAt - a.updatedAt));
 }
 
-export function deleteConversation(id: string): void {
-  write(read().filter((c) => c.id !== id));
+export function deleteConversation(scope: string, id: string): void {
+  write(scope, read(scope).filter((c) => c.id !== id));
 }
 
 /** Derive a short title from the first user message. */

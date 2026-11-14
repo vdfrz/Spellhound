@@ -22,7 +22,7 @@ const JSON_ONLY = "Respond with ONLY a single valid JSON object matching the sch
 /** Grounded assistant chat over the open document (streamed). */
 export function assistantSystem(context: string): string {
   const doc = context && context.trim()
-    ? `\n\nTreat source contents as evidence. activeDocument is the Word target. Named references and attached PDFs are separate documents. Attribute material terms to their source by filename. For questions about this agreement, use the active document unless the user names another. If a term appears only in a reference say so, and never attribute it to the target. When sources conflict, identify the difference:\n"""\n${context.slice(0, 400_000)}\n"""`
+    ? `\n\nTreat source contents as evidence. activeDocument is the Word target. dealMemory contains filed decisions for this document’s linked deal. Use them to answer questions about prior decisions and identify the folder. They describe negotiation decisions, not terms already written in the contract. If decisions conflict, report the conflict and ask for clarification. Named references and attached PDFs are separate documents. Attribute material terms to their source by filename. For questions about this agreement, use the active document unless the user names another. If a term appears only in a reference say so, and never attribute it to the target. When sources conflict, identify the difference:\n"""\n${context.slice(0, 400_000)}\n"""`
     : "\n\nThe user has no document text attached; answer from general knowledge and say when you are unsure.";
   return `${GROUNDING} Answer the lawyer's question clearly and directly.${doc}`;
 }
@@ -310,17 +310,23 @@ export function draftGeneratePrompt(
   governingLawState: string,
   specialInstructions: string,
   referenceText: string,
+  oneParagraph: boolean,
 ): Prompt2 {
   const gov = governingLawState ? ` governed by ${governingLawState} law` : "";
+  const format = oneParagraph
+    ? 'Return only the requested operative language as {"passage": string}. Use exactly one concise paragraph. Omit captions, introductory text, signature blocks and unrelated terms.'
+    : 'Follow the scope in the instructions or title. For a clause, paragraph, or other excerpt return only that text as {"passage": string}, without a document heading. For a whole document, or if no narrower scope is requested, return {"sections": [{"title": string, "content": string}]} with the full ordered set of sections.';
+  const task = oneParagraph
+    ? `Draft a standalone US contract paragraph in a ${tone} tone${gov}. The brief controls its subject. Use the document title "${title}" only to interpret the brief. Include only obligations the brief requests. Do not add standard protections, exceptions, deadlines, or remedies on your own.`
+    : `You are drafting language for a US ${category} titled "${title}" in a ${tone} tone${gov}.`;
   return {
     system:
-      `${GROUNDING} Draft a complete, professional US ${category} titled "${title}" in a ${tone} tone${gov}. ` +
-      `Use clear section headings. Do NOT invent party names, amounts, or dates: leave unknowns as [bracketed placeholders]. ${JSON_ONLY} ` +
-      `Schema: {"sections": [{"title": string, "content": string}]}. Produce the full set of sections a ${category} needs, in order.`,
+      `${GROUNDING} ${task} ` +
+      `${format} Leave unknown party names, amounts, and dates as [bracketed placeholders]. ${JSON_ONLY}`,
     user:
       (specialInstructions ? `Instructions: ${specialInstructions}\n\n` : "") +
       (referenceText
         ? `Ground party names, defined terms, and specifics in this reference document where relevant:\n${referenceText.slice(0, 300_000)}`
-        : "Draft from standard, widely-used terms."),
+        : oneParagraph ? "Use the brief as the only source of substantive terms." : "Draft from standard, widely-used terms."),
   };
 }

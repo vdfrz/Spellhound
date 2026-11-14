@@ -1,11 +1,14 @@
-import { useEffect, type ReactNode } from "react";
+import type { Matter } from "@/features/matters/api";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { CheckIcon, FolderIcon, GlobeIcon, ScaleIcon, UploadIcon } from "@/ui/icons";
 import { attachAccept } from "@/api/context";
 import { isCommunity } from "@/community/edition";
-import { LockIcon } from "@/ui/UpgradeGate";
+import { MatterItemPicker } from "./MatterItemPicker";
 import { AttachmentChips } from "./AttachmentChips";
 import { MAX_ATTACHMENTS, type AttachedFile } from "./useAttachments";
 import "./context-menu.css";
+
+const ResearchView = lazy(async () => ({ default: (await import("@/features/research/ResearchView")).ResearchView }));
 
 /**
  * Which grounding sources the assistant should draw on for the next question.
@@ -52,6 +55,7 @@ export function activeContextCount(config: ContextConfig, hasMatter: boolean): n
  * sheet above the composer with a click-away backdrop and Escape-to-close.
  */
 export function ContextMenu({
+  onSave, onLink,
   config,
   onChange,
   hasMatter,
@@ -62,6 +66,8 @@ export function ContextMenu({
   atCap,
   onClose,
 }: {
+  onSave?: () => void;
+  onLink?: (folder: Matter) => void;
   config: ContextConfig;
   onChange: (config: ContextConfig) => void;
   hasMatter: boolean;
@@ -81,12 +87,14 @@ export function ContextMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // These three sources (US corpus, matter documents, web search) all run on the
-  // Spellhound backend/account. In the community/BYOK edition none of them apply,
-  // so show them locked (rather than as live toggles that would silently do
-  // nothing) and keep the attach-file section below, which works on-device.
   const community = isCommunity();
-  const rows = community ? SOURCES : SOURCES.filter((s) => !s.needsMatter || hasMatter);
+  const rows = SOURCES.filter(s => !s.needsMatter || hasMatter);
+  const [picker, setPicker] = useState<"matter" | "law" | "web" | null>(null);
+  function attachText(name: string, text: string) {
+    if (atCap) return;
+    onAttach(new File([text], name + ".txt", { type: "text/plain" }));
+    onClose();
+  }
 
   return (
     <>
@@ -100,25 +108,19 @@ export function ContextMenu({
         <div className="ctx-menu__head">
           <strong className="small">Add context</strong>
         </div>
-        {rows.map((s) => {
-          if (community) {
-            return (
-              <div
-                key={s.key}
-                className="ctx-source ctx-source--locked"
-                aria-disabled="true"
-                title="Requires the Spellhound workspace"
-              >
-                <span className="ctx-source__icon" aria-hidden>
-                  {s.icon}
-                </span>
-                <span className="ctx-source__label">{s.label}</span>
-                <span className="ctx-source__check" aria-hidden>
-                  <LockIcon size={13} />
-                </span>
-              </div>
-            );
-          }
+        {community && (picker ? <div className="ctx-menu__picker stack">
+          <button type="button" className="btn btn--sm" onClick={() => setPicker(null)}>Back to sources</button>
+          {picker === "matter" ? <MatterItemPicker onLink={onLink ? folder => { onLink(folder); onClose(); } : undefined} onPick={(matter, entry) => attachText(
+            matter.name + " — " + entry.title, entry.body
+          )} /> : <Suspense fallback={<p>Opening research…</p>}><ResearchView initialSource={picker === "law" ? "cases" : "web"}
+            onAttach={item => attachText(item.citation, [item.title, item.citation, item.url, item.passage, "Treatment unknown"].join("\n"))} /></Suspense>}
+        </div> : <>
+          {onSave && <button className="ctx-source" disabled={atCap} onClick={() => setPicker("matter")}><FolderIcon size={16} />Use from a deal folder</button>}
+          {onSave && <button className="ctx-source" onClick={() => { onClose(); onSave(); }}><FolderIcon size={16} />Save to a deal folder</button>}
+          <button className="ctx-source" disabled={atCap} onClick={() => setPicker("law")}><ScaleIcon size={16} />Look up US law</button>
+          <button className="ctx-source" disabled={atCap} onClick={() => setPicker("web")}><GlobeIcon size={16} />Search the web with Publik</button>
+        </>)}
+        {!community && rows.map((s) => {
           const on = config[s.key];
           return (
             <button
@@ -139,16 +141,7 @@ export function ContextMenu({
             </button>
           );
         })}
-        {community ? (
-          <p className="ctx-menu__note small muted">
-            Case law, matter documents, and web search are available with a connected Spellhound workspace. Attach a
-            file below to add your own context.
-          </p>
-        ) : (
-          !hasMatter && (
-            <p className="ctx-menu__note small muted">Set an active matter to search its documents.</p>
-          )
-        )}
+        {!community && !hasMatter && <p className="ctx-menu__note small muted">Set an active matter to search its documents.</p>}
 
         <div className="ctx-attach">
           <AttachmentChips files={attachments} onRemove={onRemoveAttachment} onOcr={onOcrAttachment} />

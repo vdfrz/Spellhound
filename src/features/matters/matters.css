@@ -1,0 +1,9 @@
+.matter-workspace { padding: 12px; color: var(--text); background: var(--neutral-bg-1); overflow-wrap: anywhere; }
+.matter-workspace :is(form, section, fieldset, label) { display: grid; gap: 6px; }
+.matter-workspace :is(form, section, h3, details) { margin-top: 12px; }
+.matter-workspace :is(input, select, textarea, button) { color: inherit; font: inherit; padding: 5px 8px; min-width: 0; }
+.matter-workspace fieldset { min-width: 0; padding: 10px; border: 1px solid var(--neutral-stroke-1); }
+.matter-workspace button { justify-self: start; cursor: pointer; }
+.matter-workspace summary { cursor: pointer; }
+.matter-workspace small { text-transform: uppercase; color: var(--text-muted); }
+.matter-body { white-space: pre-wrap; }

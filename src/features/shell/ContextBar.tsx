@@ -2,14 +2,7 @@ import { useAppNav } from "@/app/nav";
 import { useSelection } from "@/features/tools/useSelection";
 import { OverflowMenu, type OverflowMenuItem } from "@/ui/OverflowMenu";
 import type { SelectionToolKey } from "@/app/nav";
-import { isCommunity } from "@/community/edition";
 import "./context-bar.css";
-
-// "Find US authority" is the research-in-the-redline differentiator: it sends the
-// selected clause to the Assistant with the US corpus on (not document-only), so
-// the controlling case or statute comes back next to the clause.
-const FIND_AUTHORITY_PROMPT =
-  "Find the controlling US case law or statute relevant to this clause. Give the citation(s) and briefly explain how each applies.";
 
 /**
  * Persistent shell strip for cross-feature selection actions.
@@ -33,22 +26,14 @@ export function ContextBar() {
     navigate("assistant", { kind: "assistantAsk", prompt: "", scope: "selection" });
   const runTool = (tool: SelectionToolKey) =>
     navigate("assistant", { kind: "selectionTool", tool });
-  const findAuthority = () =>
-    navigate("assistant", {
-      kind: "assistantAsk",
-      prompt: FIND_AUTHORITY_PROMPT,
-      scope: "selection",
-      autoSend: true,
-    });
+  const findAuthority = () => navigate("tools", { kind: "openTool", tool: "research" });
   const redact = () => navigate("tools", { kind: "openTool", tool: "redact" });
 
   // Secondary verbs behind one dropdown so the strip does not overflow the pane.
-  // "Find US authority" needs the hosted US corpus to answer, so omit it in the
-  // community/BYOK edition rather than have it answer from the document alone.
   const more: OverflowMenuItem[] = [
     { label: "Plain English", onSelect: () => runTool("plain") },
     { label: "Check compliance", onSelect: () => runTool("compliance") },
-    ...(isCommunity() ? [] : [{ label: "Find US authority", onSelect: findAuthority }]),
+    { label: "Open public research", onSelect: findAuthority },
     { label: "Redact", onSelect: redact },
   ];
 

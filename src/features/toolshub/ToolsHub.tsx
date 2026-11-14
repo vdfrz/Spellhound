@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/ui/primitives";
 import { ViewHeader } from "@/ui/ViewHeader";
-import type { AppIntent } from "@/app/nav";
+import type { AppIntent, ToolKey } from "@/app/nav";
 import {
   ArrowLeftIcon,
   RedactIcon,
@@ -24,19 +24,8 @@ import { ProperFormatView } from "@/features/properformat/ProperFormatView";
 import { TermNavigatorView } from "@/features/navigator/TermNavigatorView";
 import { DealCockpitView } from "@/features/cockpit/DealCockpitView";
 import { FiguresView } from "@/features/figures/FiguresView";
+import { ResearchView } from "@/features/research/ResearchView";
 import "./toolshub.css";
-
-// ToolKey is shared with the nav intent bus (@/app/nav). Kept in sync there.
-type ToolKey =
-  | "cleancopy"
-  | "terms"
-  | "xref"
-  | "sendready"
-  | "redact"
-  | "properFormat"
-  | "termnav"
-  | "cockpit"
-  | "figures";
 
 // Tools are grouped by where they sit in the lawyer's flow, so the launcher
 // reads as a workflow (understand the doc -> change it -> prepare to send) rather
@@ -58,6 +47,14 @@ interface ToolDef {
 }
 
 const TOOLS: ToolDef[] = [
+  {
+    key: "research",
+    group: "check",
+    title: "Public legal research",
+    description: "Read a federal statute or regulation, check a Supreme Court citation, or search the public web.",
+    icon: <BookIcon size={18} />,
+    view: <ResearchView />,
+  },
   // Check: verify the open document's internal integrity.
   {
     key: "terms",

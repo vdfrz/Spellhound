@@ -15,6 +15,7 @@
  * exotic definition styles rather than emit noise.
  */
 
+import { termMentions } from "./term-mentions";
 import { snippetAroundValue, type ContextSnippet } from "./context-snippet";
 
 export type TermFindingKind = "undefined" | "duplicate" | "unused";
@@ -36,39 +37,6 @@ export interface DefinedTermsReport {
   findings: TermFinding[];
 }
 
-// A defined term: opens with a capital letter, no quote chars inside, bounded so
-// a stray quote pair cannot run away. Straight and curly quotes both allowed.
-const Q_OPEN = "[\"“”]";
-const Q_CLOSE = "[\"“”]";
-const TERM = "([A-Z][^\"“”]{0,60})";
-
-// "X" means / shall mean / has the meaning / refers to ...
-const VERB_DEF = new RegExp(
-  `${Q_OPEN}${TERM}${Q_CLOSE}(?:\\(s\\))?\\s*(?:means|shall\\s+mean|shall\\s+have\\s+the\\s+meaning|has\\s+the\\s+meaning|refers?\\s+to|shall\\s+refer\\s+to)\\b`,
-  "gi",
-);
-
-// Parenthetical: ( [lead-in] "X" ...  e.g. ("X"), (the "X"), (this "X"),
-// (each a "X"), (collectively, the "Xs"), (hereinafter referred to as the "X").
-// "this" is the standard preamble form -- (this "Agreement"), (this "Note") --
-// and its omission made every contract's own "Agreement" read as undefined.
-const PAREN_LEADIN =
-  "(?:the\\s+|this\\s+|each\\s+(?:a\\s+)?|an?\\s+|collectively,?\\s+(?:the\\s+)?|individually,?\\s+(?:a\\s+)?|together,?\\s+(?:the\\s+)?|hereinafter,?\\s+(?:referred\\s+to\\s+as\\s+)?(?:the\\s+)?|referred\\s+to\\s+as\\s+(?:the\\s+)?)?";
-const PAREN_DEF = new RegExp(`\\(\\s*${PAREN_LEADIN}${Q_OPEN}${TERM}${Q_CLOSE}`, "g");
-
-// Any quoted, capitalized token (candidate defined-term usages).
-const QUOTED_TOKEN = new RegExp(`${Q_OPEN}${TERM}${Q_CLOSE}`, "g");
-
-/** Normalize a captured term: trim, collapse inner whitespace, drop a trailing
- *  plural "(s)" marker and stray punctuation. */
-function normalizeTerm(raw: string): string {
-  return raw
-    .replace(/\s+/g, " ")
-    .replace(/\(s\)$/i, "")
-    .replace(/[.,;:]+$/, "")
-    .trim();
-}
-
 /** Escape a term for use inside a RegExp. */
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -88,37 +56,6 @@ function countTermOccurrences(text: string, term: string): number {
   return (text.match(re) ?? []).length;
 }
 
-/** Count how many times a term appears in quotes. */
-function countQuotedOccurrences(text: string, term: string): number {
-  const re = new RegExp(`${Q_OPEN}${escapeRe(term)}(?:\\(s\\))?${Q_CLOSE}`, "g");
-  return (text.match(re) ?? []).length;
-}
-
-function collectDefinitions(text: string): Map<string, number> {
-  const defs = new Map<string, number>();
-  for (const re of [VERB_DEF, PAREN_DEF]) {
-    re.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-      const term = normalizeTerm(m[1]);
-      if (term.length < 2) continue;
-      defs.set(term, (defs.get(term) ?? 0) + 1);
-    }
-  }
-  return defs;
-}
-
-function collectQuotedTokens(text: string): Set<string> {
-  const tokens = new Set<string>();
-  QUOTED_TOKEN.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = QUOTED_TOKEN.exec(text)) !== null) {
-    const t = normalizeTerm(m[1]);
-    if (t.length >= 2) tokens.add(t);
-  }
-  return tokens;
-}
-
 const MAX_PER_BUCKET = 100;
 
 /**
@@ -128,8 +65,14 @@ const MAX_PER_BUCKET = 100;
  * list.
  */
 export function analyzeDefinedTerms(text: string): DefinedTermsReport {
-  const defs = collectDefinitions(text);
-  const quoted = collectQuotedTokens(text);
+  const defs = new Map<string, number>();
+  const quoted = new Map<string, number>();
+  for (const { term, defined, blankExhibitAlias } of termMentions(text)) {
+    quoted.set(term, (quoted.get(term) ?? 0) + 1);
+    if (defined && !(blankExhibitAlias && defs.has(term))) {
+      defs.set(term, (defs.get(term) ?? 0) + 1);
+    }
+  }
 
   const undefinedF: TermFinding[] = [];
   const duplicateF: TermFinding[] = [];
@@ -162,10 +105,9 @@ export function analyzeDefinedTerms(text: string): DefinedTermsReport {
 
   // Undefined check: a quoted, capitalized token that is never defined but also
   // appears UNQUOTED (so it is used like a defined term, not a stray quotation).
-  for (const token of quoted) {
+  for (const [token, quotedCount] of quoted) {
     if (defs.has(token)) continue;
     const total = countTermOccurrences(text, token);
-    const quotedCount = countQuotedOccurrences(text, token);
     if (total > quotedCount) {
       undefinedF.push({
         term: token,

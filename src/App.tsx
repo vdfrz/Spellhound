@@ -37,9 +37,7 @@ import "./styles/app.css";
 /**
  * Four primary modes, each a job you do to the document open in front of you:
  * Review (read + mark up), Draft (write new language), Assistant (ask the doc),
- * Tools (finalize / QA utilities). Everything that does not need the open
- * document (case-law research, playbook + template + draft libraries) lives on
- * the web app and is reached by a deep-link, not a tab.
+ * Tools (document checks, public research and preparation for sending).
  */
 // Order leads with the Assistant (the default landing tab and the most flexible
 // entry point: ask about the doc, or switch to Edit for redlines), then the
@@ -51,21 +49,21 @@ const TABS: { id: AppTab; label: string; icon: (p: { size?: number }) => ReactNo
   { id: "tools", label: "Tools", icon: ToolsIcon },
 ];
 
-export function App() {
+export function App({ privateMattersAvailable = false }: { privateMattersAvailable?: boolean } = {}) {
   return (
     <ReviewProvider>
       <AppNavProvider>
         <TourProvider>
-          <AppShell />
+          <AppShell privateMattersAvailable={privateMattersAvailable} />
         </TourProvider>
       </AppNavProvider>
     </ReviewProvider>
   );
 }
 
-function AppShell() {
+function AppShell({ privateMattersAvailable }: { privateMattersAvailable: boolean }) {
   const { tab, setTab, reviewSub, setReviewSub, intent, navigate, clearIntent } = useAppNav();
-  const { startIfUnseen, start } = useTour();
+  const { start } = useTour();
   const [user, setUser] = useState<User | null>(null);
   // Bumped whenever the active organization changes, to remount the data views
   // (matters/drafts/playbooks/clients) so they refetch under the new org.
@@ -77,12 +75,6 @@ function AppShell() {
   useEffect(() => subscribeActiveOrg(() => setOrgVersion((v) => v + 1)), []);
 
   const authed = !!user;
-
-  // First run: once the user is confirmed, start the welcome walkthrough unless
-  // they have already completed (or skipped) it. It drives the tabs itself.
-  useEffect(() => {
-    if (authed) startIfUnseen(WELCOME_TOUR_ID);
-  }, [authed, startIfUnseen]);
 
   // A "Run this playbook" handoff resolves to the Review form's pending state.
   const pendingPlaybook =
@@ -240,7 +232,7 @@ function AppShell() {
       >
         {authed && (
           <div hidden={tab !== "assistant" || showSettings} style={{height: "100%"}}>
-            <AssistantTab intent={tab === "assistant" && !showSettings ? intent : null} onIntentDone={clearIntent} />
+            <AssistantTab privateMattersAvailable={privateMattersAvailable} intent={tab === "assistant" && !showSettings ? intent : null} onIntentDone={clearIntent} />
           </div>
         )}
         {!authed ? (

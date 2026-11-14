@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
+import { researchRoute } from "./server/research.mjs";
 import react from "@vitejs/plugin-react";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -35,6 +36,17 @@ function devHttps() {
 // Office requires HTTPS in production; local dev uses the office-addin dev certs.
 export default defineConfig(({mode}) => ({
   plugins: [react(), {
+    name: "local-public-research",
+    configureServer(server) {
+      const handle = researchRoute({ origin: (server.config.server.https ? "https" : "http") + "://localhost:" + server.config.server.port });
+      server.middlewares.use("/spellhound/research", (req, res, next) => {
+        const localHost = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host ?? "");
+        const localClient = ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress ?? "");
+        const key = localHost && localClient && mode === "community" ? process.env.PUBLIK_API_KEY : undefined;
+        handle(req, res, key).catch(next);
+      });
+    },
+  }, {
     name: "spellhound-edition",
     generateBundle() { this.emitFile({type:"asset", fileName:"edition.json",
       source:JSON.stringify({edition:mode === "community" ? "developer" : "publik"})}); }

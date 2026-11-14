@@ -10,8 +10,10 @@ Use Node 22. Run `npm ci`, then `npm test` and `npm run build`. The production p
 
 Publik-only sign-in is implemented for a single Word installation. After browser claim, users explicitly choose a Publik balance or their own provider. Documents and keys are not shared between installations. The server enforces a 30-day session limit and checks the wallet on paid requests. Optional content-free usage counts are off initially.
 
-**Hosting and cross-device identity are unconfirmed.** A Publik listing links to an existing deployment. No alternative host, public listing or multi-device account is provided here. See the [private pilot guide](DEPLOY.md) for platform evidence, token handling, the Word manifest and the Iris-assisted installation checklist.
+The intended public deployment uses the dedicated Google Cloud project and Publik sign-in. Billing attachment, a live HTTPS address and a real sign-in test in Word are pending. A Publik listing links to the deployed service. Each Word installation currently has its own session. See the [private pilot guide](DEPLOY.md) for platform evidence, token handling, the Word manifest and the Iris-assisted installation checklist.
 
 ## Release status
 
-The local document tools, Ask/Edit changes, branded manifests, and initial Publik gate are under development. Formerly hosted functions such as matters, approvals and research require independent Spellhound services before release. The project is not currently available from the Word store. See [Publik publishing](https://publikhq.com/skills/publish.md) and [Publik sign-in](https://publikhq.com/skills/api.md).
+The local document tools, Ask/Edit changes, branded manifests, and initial Publik gate are under development. Tools → Public legal research can retrieve public source passages and citations. Shared matters, role-checked approvals and the template library still require independent services. See the [research guide and Word action inventory](RESEARCH-AND-WORD-ACTIONS.md) for coverage and limits. The project is not currently available from the Word store. See [Publik publishing](https://publikhq.com/skills/publish.md) and [Publik sign-in](https://publikhq.com/skills/api.md).
+
+A [private matter workspace preview](server/matters/README.md) is available locally with synthetic users and records. It is not mounted by the hosted service.
