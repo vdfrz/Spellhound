@@ -22,7 +22,6 @@ import {
 import { JURISDICTIONS } from "@/features/review/constants";
 import { isCommunity } from "@/community/edition";
 import { AiProvidersCard } from "./AiProvidersCard";
-import { CourtListenerCard } from "./CourtListenerCard";
 import "./settings.css";
 
 
@@ -213,7 +212,6 @@ export function SettingsView({
 
       {isCommunity() && <AiProvidersCard />}
 
-      {isCommunity() && <CourtListenerCard />}
 
       {hosted && <div className="card settings-card"><UsageChoice /></div>}
 

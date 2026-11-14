@@ -1,4 +1,3 @@
-import { hasCourtListenerToken } from "@/ai/keys";
 import { isCommunity } from "./edition";
 
 /**
@@ -14,13 +13,4 @@ export const REQUIRES_ACCOUNT_NOTE = "Requires a Spellhound account";
 /** Surfaces that only make sense with a hosted Spellhound account. */
 export function showsAccountSurfaces(): boolean {
   return !isCommunity();
-}
-
-/**
- * Case citation existence checking is available in the community build when the
- * user has added their own CourtListener token (checked browser-direct against
- * CourtListener). Statute resolution still needs Spellhound's corpus and stays off.
- */
-export function citationAuthorityAvailable(): boolean {
-  return !isCommunity() || hasCourtListenerToken();
 }
