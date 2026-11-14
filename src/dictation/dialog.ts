@@ -89,7 +89,7 @@ function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
-function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButtonElement } {
+function render() {
   document.getElementById("dictation-root")?.remove();
   document.body.setAttribute(
     "style",
@@ -99,7 +99,7 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
     role: "status",
     style: "display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;",
   });
-  const statusText = h("span", {}, "Starting the microphone…");
+  const statusText = h("span", {}, "Select Start to use the microphone.");
   status.append(statusText);
 
   const preview = h("div", {
@@ -117,7 +117,12 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
     },
     "Insert",
   ) as HTMLButtonElement;
+  insert.hidden = true;
   insert.disabled = true;
+  const start = insert.cloneNode(true) as HTMLButtonElement;
+  start.textContent = "Start dictation";
+  start.hidden = false;
+  start.disabled = false;
   const cancel = h(
     "button",
     {
@@ -128,7 +133,7 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
     "Cancel",
   ) as HTMLButtonElement;
 
-  const row = h("div", { style: "display:flex;gap:8px;margin-top:12px;" }, insert, cancel);
+  const row = h("div", { style: "display:flex;gap:8px;margin-top:12px;" }, start, insert, cancel);
   const root = h(
     "div",
     { style: "display:flex;flex-direction:column;gap:10px;padding:14px 16px;" },
@@ -139,12 +144,15 @@ function render(): { status: HTMLElement; preview: HTMLElement; insert: HTMLButt
   document.body.append(root);
 
   cancel.onclick = () => post({ type: "cancel" });
-  return { status: statusText, preview, insert };
+  return { status: statusText, preview, start, insert };
 }
 
 function run(): void {
   const ui = render();
+  let waiting: number | undefined;
   function fail(message: string) {
+    window.clearTimeout(waiting);
+    ui.start.disabled = true;
     ui.status.textContent = message;
     post({ type: "error", message });
   }
@@ -163,7 +171,10 @@ function run(): void {
 
   const currentText = (interim: string) => `${finalText}${interim}`.trim();
 
-  rec.onstart = () => { ui.status.textContent = "Listening. Speak now."; };
+  rec.onstart = () => {
+    window.clearTimeout(waiting);
+    ui.status.textContent = "Listening. Speak now.";
+  };
   rec.onresult = (e) => {
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -203,30 +214,23 @@ function run(): void {
     post({ type: "done", text: ui.preview.textContent ?? "" });
   };
 
-  // Prime the mic with an explicit getUserMedia so the browser shows one clean
-  // permission prompt and a denial surfaces a precise message (SpeechRecognition
-  // alone can fail silently). Release the stream immediately; recognition opens
-  // its own capture.
-  const primeAndStart = async () => {
+  // Some Word webviews require a gesture inside the dialog itself. Let
+  // recognition request its own microphone instead of waiting on a separate
+  // capture permission before recognition even starts.
+  ui.start.onclick = () => {
+    ui.start.hidden = true;
+    ui.insert.hidden = false;
+    ui.status.textContent = "Starting the microphone…";
+    waiting = window.setTimeout(() => {
+      ui.status.textContent = "Still waiting for speech recognition. Check microphone permissions for Word, or cancel and use your device’s keyboard dictation in the message box.";
+    }, 10000);
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      }
       rec.start();
-    } catch (err) {
-      const name = (err as { name?: string })?.name;
-      const code =
-        name === "NotAllowedError" || name === "SecurityError"
-          ? "not-allowed"
-          : name === "NotFoundError"
-            ? "audio-capture"
-            : undefined;
+    } catch {
       stopped = true;
-      fail(messageForError(code));
+      fail("Dictation could not start. Check microphone permissions for Word.");
     }
   };
-  void primeAndStart();
 }
 
 // Office.js must be ready before messageParent works.
