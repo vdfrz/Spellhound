@@ -9,6 +9,10 @@
 | Same person on a second device | [Usage docs](https://publikhq.com/skills/telemetry.md) describe Publik deduplicating accounts internally. They do not give Spellhound a verified, immutable account identifier. | A documented server-verifiable subject and revocation/relink semantics. Until then there is no shared private workspace or account recovery. Handles, install IDs and cookies must never identify an account across devices. |
 | Iris and Word | [Iris](https://www.publikhq.com/iris) assists desktop installs. Microsoft documents [web sideloading](https://learn.microsoft.com/office/dev/add-ins/testing/sideload-office-add-ins-for-testing) and [Mac sideloading](https://learn.microsoft.com/office/dev/add-ins/testing/sideload-an-office-add-in-on-mac). | A real Word test and an observed Iris-assisted install. No registered Iris recipe, Office store listing, or automatic install is claimed. |
 
+## Build delivery
+
+GitHub Actions runs the app and matter tests on pull requests, builds the production container and checks the install page and Word manifest. After a merge to main, the workflow publishes the same tested image to `ghcr.io/vdfrz/spellhound:sha-<full-commit>`. Use the recorded image digest for the pilot deployment once billing and the host are ready. Publishing an image does not start a cloud service.
+
 ## Credentials and launch
 
 The builder flow in [Publik’s app-token instructions](https://publikhq.com/skills/api.md) uses a human-approved, short-lived device authorization to mint the app token for a specific slug. A listing may first require the repo owner to claim it. This is a builder action, separate from the user's browser claim. Do not run the publishing flow to unlock a private pilot. If a private token is unavailable, stop here.
