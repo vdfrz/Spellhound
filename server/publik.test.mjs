@@ -15,7 +15,8 @@ async function pilot(t, token = 'pat_fixture') {
   const store = sessionStore(directory, ()=>clock.now);
   const handler = publikRoutes({origin, store, token, env:{}, upstream: async(url,opts) => {
     if (url.endsWith('/installs')) {
-      const {install_id,os} = JSON.parse(opts.body);
+      const {install_id,os,app_slug} = JSON.parse(opts.body);
+      assert.equal(app_slug,'spellhound-app');
       assert.equal(os,'macos');
       wallets.push({id:install_id, claim_state:'anonymous', balance_micros:0, claim_url:null});
       return Response.json({key:'pk_fixture_'+wallets.length, claim_url:'https://publikhq.com/fixture'},{status:201});
@@ -89,7 +90,7 @@ test('usage is opt-in, server constructs the payload, opt-out and DNT stop deliv
   await p.post('active_session',a);
   await p.post('usage/off',a); await p.post('active_session',a);
   assert.deepEqual(p.events,['app_opened','active_session'].map(event=>({n:1,data:{
-    v:1,app:'spellhound',install_id:a.id,event,app_version:'0.1.0',os:'macos'}})));
+    v:1,app:'spellhound-app',install_id:a.id,event,app_version:'0.1.0',os:'macos'}})));
 });
 
 test('server expiry applies even with cookie; sweep removes dormant and unknown-age legacy credentials',async t=>{

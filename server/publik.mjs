@@ -3,7 +3,7 @@ import { researchRoute } from './research.mjs';
 import { pipeline } from 'node:stream/promises';
 import { cookieValue, sessionStore } from './sessions.mjs';
 
-const APP_SLUG = "spellhound";
+const APP_SLUG = "spellhound-app";
 const version = '0.1.0';
 const base = 'https://publikhq.com';
 const prefix = '/spellhound/session/';
