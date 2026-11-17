@@ -85,7 +85,7 @@ export function PublikGate({ children }: { children:ReactNode }) {
     setBusy(true);
     try {
       const r = await session("start");
-      if (!r.ok) throw Error(r.status === 503 ? "The pilot is waiting for its Publik app token." : "Publik could not start sign-in. Retry.");
+      if (!r.ok) throw Error(r.status === 503 ? "Spellhound is missing its Publik app token. Update your installation." : "Publik could not start sign-in. Retry.");
       if ((await session("status")).status === 401) throw Error("Word blocked the sign-in cookie. Try a supported desktop Word profile.");
       retry();
     } catch(e) { setError(e instanceof Error ? e.message : "Unable to sign in."); }

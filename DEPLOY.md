@@ -1,4 +1,14 @@
-# Private pilot: release gates
+# Local Publik installation
+
+The Publik listing uses a local source install. Follow [README.md](README.md): `npm ci`, `npm run setup:local`, then `npm run start:local`. No hosting provider is required. Install `manifest.localhost.xml` in desktop Word and sign in with Publik. The canonical `manifest.xml` also points to `https://localhost:3000`; the community manifest is for the separate developer build.
+
+Publik's public app token is intentionally included in `publik-app-token.txt`, as required for source installs. It provisions a separate private credential for each installation. Never commit personal `pk_` credentials or builder `pbt_` tokens. Private sessions stay in the operating system's user application-data directory, outside the checkout.
+
+`npm run self-test:local` checks registration and a real wallet response through the built app's local HTTPS service. Stop any running local server first. It prints only a sanitized result, removes its temporary local session, and sends no usage event or AI request. Word sign-in and editing need a separate end-to-end check.
+
+The remainder describes an optional cloud pilot, not a requirement for the local listing.
+
+## Private pilot: release gates
 
 **No public pilot URL exists in this repository.** The intended host is the Google Cloud project `spellhound-vdfrz`, with Publik sign-in in Word. Fellowship billing attachment and the public HTTPS address still need confirmation. A catalog entry, a manifest, a successful build, and a working AI gateway do not establish hosting.
 
@@ -19,9 +29,9 @@ The builder flow in [Publik’s app-token instructions](https://publikhq.com/ski
 
 The pilot runtime reads only the server environment variable PUBLIK_APP_TOKEN for provisioning. Never use a shared personal AI key. Do not put tokens in manifests, Docker layers, chat, browser bundles, URLs or logs. On replacement, update the runtime secret and restart; verify a **fresh** private installation. Confirm old-token invalidation and existing-key behavior with Publik: issuing a replacement is not proof of revocation. If an installation key is revoked, the next wallet check invalidates the local session. Sign-out deletes that server credential; it does not claim to revoke the upstream credential or sign the browser out of Publik.
 
-Build with Node 22 or later, npm ci, npm test and npm run build. The Dockerfile serves the build and its manifest from the same Node process. Start with npm start only on the approved runtime: SPELLHOUND_ORIGIN must be the externally accessible HTTPS origin with no path, query or credentials. TLS must terminate at its ingress. Use a dedicated private session volume outside dist at SPELLHOUND_SESSION_DIR (default /data/spellhound/sessions), writable only by the service. Use a single process for this pilot; budget/rate-limit installation creation at the ingress as well. The process binds PORT (default 8080); SPELLHOUND_BIND=127.0.0.1 is available for local checks. Do not log request bodies, cookies, upstream keys or access-bearing links. Scope access at ingress to the pilot group; knowing the URL is not an invitation check.
+Build with Node 22 or later, npm ci, npm test and npm run build. The Dockerfile serves the build and its manifest from the same Node process. Start with npm run start:hosted only on the approved runtime: SPELLHOUND_ORIGIN must be the externally accessible HTTPS origin with no path, query or credentials. TLS must terminate at its ingress. Use a dedicated private session volume outside dist at SPELLHOUND_SESSION_DIR (default /data/spellhound/sessions), writable only by the service. Use a single process for this pilot; budget/rate-limit installation creation at the ingress as well. The process binds PORT (default 8080); SPELLHOUND_BIND=127.0.0.1 is available for local checks. Do not log request bodies, cookies, upstream keys or access-bearing links. Scope access at ingress to the pilot group; knowing the URL is not an invitation check.
 
-The install page at / links to /manifest.xml. The server renders it from the template using the configured origin even inside the built image. For a separate XML handoff, run npm run manifest -- "$SPELLHOUND_ORIGIN" after building; retrieve dist/manifest.xml. The repository template and developer manifests are not release artifacts.
+The install page at / links to /manifest.xml. The server renders it from the template using the configured origin even inside the built image. For a separate XML handoff, run npm run manifest -- "$SPELLHOUND_ORIGIN" after building; retrieve dist/manifest.xml. The root manifests target localhost. For an optional cloud deployment, distribute the generated manifest with the verified host address instead.
 
 ## Private pilot acceptance
 

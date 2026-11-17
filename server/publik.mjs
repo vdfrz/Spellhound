@@ -43,7 +43,7 @@ export function publikRoutes({ origin, directory, token, upstream = fetch, now =
     const action = path.startsWith(prefix) ? path.slice(prefix.length) : path;
     const install = await store.read(req.headers.cookie);
     if (action === 'start' && !install) {
-      if (!token?.startsWith('pat_')) return json(res, 503, { error:'The pilot needs a Spellhound app token.' });
+      if (!token?.startsWith('pat_')) return json(res, 503, { error:'Spellhound needs its public app token.' });
       for (const [addr, w] of attempts) if (w.until <= now()) attempts.delete(addr);
       const addr = req.socket.remoteAddress;
       const w = attempts.get(addr) ?? { count:0, until:now()+60000 };
