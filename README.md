@@ -1,19 +1,17 @@
 # Spellhound for Word
 
-Spellhound is a Microsoft Word add-in for contract review, native tracked changes, drafting, playbooks, and cited research. Based on the Apache-licensed Vaquill Word client. See [NOTICE](NOTICE).
+Somehow, legal tech turned editing a Word document in Word into a luxury. Spellhound is a free, open-source Word add-in for reviewing and drafting contracts.
 
-## Development
+Select a clause, ask for a rewrite, and apply the suggestion as **native Word tracked changes**. The next person who opens the document can accept or reject each edit in Word. You can also compare two drafts or look up a US legal citation from the sidebar.
 
-Use Node 22. Run `npm ci`, then `npm test` and `npm run build`. The production pane opens with Sign in with Publik. To develop document features locally with your own AI provider, run `npm run dev:community` and sideload `manifest.localhost.xml` in Word.
+## Install with Iris on Publik
 
-## Hosted service
+1. Open [Spellhound on Publik](https://publikhq.com/spellhound-app) and create a Publik account. The add-in is free. If you want Publik to handle AI requests, you can use a plan or a prepaid balance. The seven-day Basic trial requires a card and renews at $8/month plus taxes and fees unless you cancel. [Publik pricing](https://publikhq.com/pricing)
+2. Open [Iris](https://publikhq.com/iris), Publik’s desktop install assistant, and ask: **“Help me install Spellhound from vedantdas312-cell/Spellhound and open it inside Microsoft Word.”** The public listing currently offers a source install. Iris can guide you through running it locally and adding it to Word. [Mac guide](https://publikhq.com/spellhound-app/install/mac) · [Windows guide](https://publikhq.com/spellhound-app/install/windows)
+3. Open a blank document in Word. On a Mac, choose **Home → Add-ins → Spellhound**, then **Open Spellhound**. In the local community version, choose your own AI provider. If you have the Publik pilot version, choose **Sign in with Publik → Continue in your browser → Link this device**. Return to Word and choose your Publik balance or your own provider key.
 
-Publik-only sign-in is implemented for a single Word installation. After browser claim, users explicitly choose a Publik balance or their own provider. Documents and keys are not shared between installations. The server enforces a 30-day session limit and checks the wallet on paid requests. Optional content-free usage counts are off initially.
+## Development and license
 
-The intended public deployment uses the dedicated Google Cloud project and Publik sign-in. Billing attachment, a live HTTPS address and a real sign-in test in Word are pending. A Publik listing links to the deployed service. Each Word installation currently has its own session. See the [private pilot guide](DEPLOY.md) for platform evidence, token handling, the Word manifest and the Iris-assisted installation checklist.
+For the local setup, code layout, and hosting instructions, see [architecture.md](architecture.md).
 
-## Release status
-
-The local document tools, Ask/Edit changes, branded manifests, and initial Publik gate are under development. Tools → Public legal research can retrieve public source passages and citations. Shared matters, role-checked approvals and the template library still require independent services. See the [research guide and Word action inventory](RESEARCH-AND-WORD-ACTIONS.md) for coverage and limits. The project is not currently available from the Word store. See [Publik publishing](https://publikhq.com/skills/publish.md) and [Publik sign-in](https://publikhq.com/skills/api.md).
-
-A [private matter workspace preview](server/matters/README.md) is available locally with synthetic users and records. It is not mounted by the hosted service.
+Spellhound is forked from **Vaquill AI for Word** and distributed under the [Apache License 2.0](LICENSE). [Upstream and third-party credits](NOTICE)
