@@ -26,12 +26,14 @@ Use Node 22 and run these commands from the repository root:
 
 ```sh
 npm ci
-npx office-addin-dev-certs install
-npm run dev:community
+npm run setup:local
+npm run start:local
 ```
 
-Keep the local server running at `https://localhost:3000` and add [manifest.localhost.xml](manifest.localhost.xml) to Word. On a Mac, copy the file to `~/Library/Containers/com.microsoft.Word/Data/Documents/wef/`, restart Word, and choose **Home → Add-ins → Spellhound for Word (Community, local)**. [Microsoft’s Mac instructions](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-mac)
+Keep the local server running at `https://localhost:3000` and add [manifest.localhost.xml](manifest.localhost.xml) to Word. On a Mac, copy the file to `~/Library/Containers/com.microsoft.Word/Data/Documents/wef/`, restart Word, and choose **Home → Add-ins → Spellhound for Word**. [Microsoft’s Mac instructions](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-mac)
 
-## Build and host the pilot
+Local mode serves the production Publik build, binds only to `127.0.0.1:3000`, and rejects a different Host header. It reads the public `publik-app-token.txt` (or an explicit `PUBLIK_APP_TOKEN` override). Private installation credentials stay outside the repository in the user's application-data directory. `npm run self-test:local` checks registration and the wallet through the built app's HTTPS routes. No cloud host is required.
+
+## Optional hosted pilot
 
 Run `npm test` and `npm run build` to test the app and produce the Publik build in `dist/`. The Node server serves the install guide at `/`, generates `/manifest.xml` for the configured HTTPS origin, and serves the Word pane at `/index.html`. The pilot needs a registered app token, HTTPS, and persistent private session storage. The CI workflow tests changes and publishes a container image from main. Hosting that image is a separate deployment. [Server entry point](server/start.mjs) · [CI workflow](.github/workflows/ci.yml) · [Deployment and pilot checks](DEPLOY.md)

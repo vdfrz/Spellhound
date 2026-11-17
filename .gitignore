@@ -41,4 +41,5 @@ provider.key
 # Private workspace development
 .venv/
 __pycache__/
-publik-app-token.txt
+# Publik's public app token is intentionally distributed for source installs.
+# Per-user pk_ credentials and private builder tokens must never be committed.

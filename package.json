@@ -23,7 +23,11 @@
     "sideload:stop": "office-addin-debugging stop manifest.dev.xml",
     "validate:manifest": "office-addin-manifest validate dist/manifest.xml",
     "manifest": "node scripts/manifest.mjs",
-    "start": "node server/start.mjs"
+    "start": "node server/start.mjs --local",
+    "start:hosted": "node server/start.mjs",
+    "setup:local": "office-addin-dev-certs install && npm run build && npm run manifest -- https://localhost:3000",
+    "start:local": "node server/start.mjs --local",
+    "self-test:local": "node server/start.mjs --local --self-test"
   },
   "dependencies": {
     "mammoth": "^1.12.0",
